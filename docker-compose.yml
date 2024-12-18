@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  pkd-bot:
+    container_name: pkd-bot
+    build: .
+    # TODO: for the future, when DB is used
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
+    environment:
+      - DEBUG=true
+    volumes:
+      - ./:/opt/app-root/src
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example_password
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+      - ./dump-postgres-202411111143.sql:/data/dump-postgres-202411111143.sql
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+volumes:
+  postgres:
