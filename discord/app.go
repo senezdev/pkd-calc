@@ -10,26 +10,25 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func init() {
-	if os.Getenv("DEBUG") == "true" {
-		logrus.SetLevel(logrus.DebugLevel)
-	}
-}
-
-func init() {
-	if err := godotenv.Load(); err != nil {
-		logrus.Fatalf("failed to open .env")
-	}
-}
-
 var (
-	BotToken = os.Getenv("BOT_TOKEN")
-	GuildID  = os.Getenv("GUILD_ID")
+	BotToken = ""
+	GuildID  = ""
 )
 
 var s *discordgo.Session
 
 func init() {
+	if err := godotenv.Load(); err != nil {
+		logrus.Fatalf("failed to open .env")
+	}
+
+	BotToken = os.Getenv("BOT_TOKEN")
+	GuildID = os.Getenv("GUILD_ID")
+
+	if os.Getenv("DEBUG") == "true" {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+
 	var err error
 	s, err = discordgo.New("Bot " + BotToken)
 	if err != nil {
