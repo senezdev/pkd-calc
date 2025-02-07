@@ -45,15 +45,26 @@ func TestCalcThreeBoost(t *testing.T) {
 		input []string
 	}{
 		{
+			// input: []string{
+			// 	"Around Pillars",
+			// 	"Blocks",
+			// 	"Fences",
+			// 	"Fortress",
+			// 	"Ice",
+			// 	"Early 3+1",
+			// 	"Ladder Tower",
+			// 	"Sandpit",
+			// 	"Finish Room",
+			// },
 			input: []string{
 				"Around Pillars",
-				"Blocks",
-				"Fences",
-				"Fortress",
-				"Ice",
-				"Early 3+1",
-				"Ladder Tower",
-				"Sandpit",
+				"Around Pillars",
+				"Around Pillars",
+				"Around Pillars",
+				"Around Pillars",
+				"Around Pillars",
+				"Around Pillars",
+				"Around Pillars",
 				"Finish Room",
 			},
 		},

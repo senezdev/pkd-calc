@@ -76,7 +76,7 @@ var roomMap = map[string]room{
 			{
 				Name:      "cp 0-1",
 				Time:      20.0,
-				BoostTime: 8.5,
+				BoostTime: 7.5,
 			},
 			{
 				Name:      "cp 1-2",
@@ -127,7 +127,7 @@ var roomMap = map[string]room{
 				BoostTime: 4.0,
 			},
 			{
-				Name:      "cp 0-2",
+				Name:      "cp 1-2",
 				Time:      10.5,
 				BoostTime: 8.5,
 			},
@@ -137,6 +137,11 @@ var roomMap = map[string]room{
 		Name:          "Fortress",
 		BoostlessTime: 15.25,
 		BoostStrats: []boostRoom{
+			{
+				Name:      "cp 0-1",
+				Time:      10.5,
+				BoostTime: 3.0,
+			},
 			{
 				Name:      "cp 1-2",
 				Time:      11.0,
@@ -153,18 +158,16 @@ var roomMap = map[string]room{
 				Time:      14.0,
 				BoostTime: 1.5,
 			},
-			// TODO: without riley
 			{
 				Name:      "cp 1-2",
 				Time:      21.5,
 				BoostTime: 12.5,
 			},
 			{
-				Name:      "cp 2-3",
+				Name:      "cp 2-3 + riley",
 				Time:      21.0,
 				BoostTime: 18.5,
 			},
-			// TODO: idk if this is with riley or not
 		},
 	},
 	"Ice": {
@@ -245,7 +248,18 @@ var roomMap = map[string]room{
 	"Quartz Climb": {
 		Name:          "Quartz Climb",
 		BoostlessTime: 19.75,
-		BoostStrats:   []boostRoom{},
+		BoostStrats: []boostRoom{
+			{
+				Name:      "cp 0-1",
+				Time:      1.5,
+				BoostTime: 14.5,
+			},
+			{
+				Name:      "cp 1-2",
+				Time:      11.5,
+				BoostTime: 13.5,
+			},
+		},
 	},
 	"Quartz Temple": {
 		Name:          "Quartz Temple",
@@ -285,12 +299,11 @@ var roomMap = map[string]room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      25.0,
+				Time:      24.5,
 				BoostTime: 3.5,
 			},
-			// TODO: ask higuy about boost split for this one
 			// {
-			// 				Name:      "cp 0-1",
+			// 				Name:      "cp 1-2",
 			// 				Time:      25.0,
 			// 				BoostTime: 3.5,
 			// 			},
@@ -389,6 +402,12 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      12.5,
 				BoostTime: 3.0,
+			},
+
+			{
+				Name:      "cp 1-2",
+				Time:      12.5,
+				BoostTime: 10.0,
 			},
 		},
 	},
@@ -562,6 +581,15 @@ func calcThreeBoost(roomList []string) (float64, []calcResultBoost, error) {
 
 							pacelock2 := max(0, 60-(timeBetweenBoosts23+secondBoostRoom.BoostStrats[secondBoostStrat].Time-secondBoostRoom.BoostStrats[secondBoostStrat].BoostTime+thirdBoostRoom.BoostStrats[thirdBoostStrat].BoostTime))
 							boostTime := boostlessTime - (firstBoostRoom.BoostlessTime - firstBoostRoom.BoostStrats[firstBoostStrat].Time) - (secondBoostRoom.BoostlessTime - secondBoostRoom.BoostStrats[secondBoostStrat].Time) - (thirdBoostRoom.BoostlessTime - thirdBoostRoom.BoostStrats[thirdBoostStrat].Time) + pacelock1 + pacelock2
+
+							// if i == 0 && j == 4 && k == 7 {
+							// 	log.Info("")
+							// 	log.Infof("%v %v %v", firstBoostStrat, secondBoostStrat, thirdBoostStrat)
+							// 	log.Infof("pacelock 1: %v", pacelock1)
+							// 	log.Infof("pacelock 2: %v", pacelock2)
+							// 	log.Infof("boostless: %v", boostlessTime)
+							// 	log.Infof("boost: %v", boostTime)
+							// }
 
 							if boostTime < bestBoostTime {
 								log.Tracef("boostless: %v", boostlessTime)
