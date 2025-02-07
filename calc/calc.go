@@ -294,6 +294,7 @@ var roomMap = map[string]room{
 		},
 	},
 	"Sandpit": {
+		// 13.5 15.5
 		Name:          "Sandpit",
 		BoostlessTime: 34.75,
 		BoostStrats: []boostRoom{
@@ -302,11 +303,11 @@ var roomMap = map[string]room{
 				Time:      24.5,
 				BoostTime: 3.5,
 			},
-			// {
-			// 				Name:      "cp 1-2",
-			// 				Time:      25.0,
-			// 				BoostTime: 3.5,
-			// 			},
+			{
+				Name:      "cp 1-2",
+				Time:      22.5,
+				BoostTime: 13.5,
+			},
 			{
 				Name:      "cp 2-3",
 				Time:      31.0,
@@ -659,7 +660,7 @@ func calcSeedInternal(roomList []string) (calcSeedResult, error) {
 }
 
 func CalcSeed(roomList []string) (bytes.Buffer, error) {
-	width, height := 700, 475
+	width, height := 775, 490
 	dc := gg.NewContext(width, height)
 
 	// Load and draw background image
@@ -727,7 +728,7 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 	}
 
 	if !roomsOutput[len(roomsOutput)-1].highlight {
-		roomsOutput = roomsOutput[:9]
+		roomsOutput = roomsOutput[:8]
 	}
 
 	// Calculate maximum text width for consistent rectangle size
@@ -827,11 +828,9 @@ func formatTime(seconds float64) string {
 		}
 	}
 
-	// Calculate minutes and remaining seconds
 	minutes := int(seconds) / 60
 	remainingSeconds := seconds - float64(minutes*60)
 
-	// Format the string
 	if minutes > 0 {
 		return fmt.Sprintf("%d:%04.1f", minutes, remainingSeconds)
 	}
