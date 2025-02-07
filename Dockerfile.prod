@@ -1,0 +1,20 @@
+FROM golang:1.22.2-bullseye AS builder
+
+WORKDIR /opt/app-root/src
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pkd-bot ./discord
+
+FROM alpine:3.19
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+
+COPY --from=builder /opt/app-root/src/pkd-bot .
+COPY .env .
+
+RUN adduser -D appuser
+USER appuser
+
+CMD ["./pkd-bot"]
