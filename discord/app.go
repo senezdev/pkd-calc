@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"os/signal"
 	"strings"
 
+	"pkd-bot/calc"
 	"pkd-bot/tournaments"
 
 	"github.com/bwmarrin/discordgo"
@@ -56,6 +58,11 @@ var commands = []*discordgo.ApplicationCommand{
 				Type:        discordgo.ApplicationCommandOptionSubCommand,
 			},
 		},
+	},
+	{
+		Name:        "calc",
+		Description: "Choose 8 rooms",
+		Options:     generateOptions(),
 	},
 }
 
@@ -172,6 +179,100 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 		})
 	},
 	"tournament": tournamentHandler,
+	"calc":       calcSeedHandler,
+}
+
+var options = calc.GetRooms()
+
+func generateOptions() []*discordgo.ApplicationCommandOption {
+	var params []*discordgo.ApplicationCommandOption
+	for i := 1; i <= 8; i++ {
+		params = append(params, &discordgo.ApplicationCommandOption{
+			Type:         discordgo.ApplicationCommandOptionString,
+			Name:         fmt.Sprintf("room_%d", i), // Use fmt.Sprintf instead of string conversion
+			Description:  fmt.Sprintf("Choose option for room %d", i),
+			Required:     true,
+			Autocomplete: true,
+		})
+	}
+	return params
+}
+
+func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	data := i.ApplicationCommandData()
+	selected := make([]string, 0, 8)
+
+	for _, option := range data.Options {
+		selected = append(selected, option.StringValue())
+	}
+
+	res, err := calc.CalcSeed(selected)
+	if err != nil {
+		log.Error(err)
+
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Go tell the developer he's an idiot 'cause something's broken idk",
+			},
+		})
+		return
+	}
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Files: []*discordgo.File{
+				{
+					Name:   "result.png",
+					Reader: bytes.NewReader(res.Bytes()),
+				},
+			},
+		},
+	})
+}
+
+func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	log.Debug("Autocomplete handler triggered")
+
+	data := i.ApplicationCommandData()
+	log.Debugf("Command data: %+v", data)
+
+	var focusedOption *discordgo.ApplicationCommandInteractionDataOption
+	for _, opt := range data.Options {
+		if opt.Focused {
+			focusedOption = opt
+			break
+		}
+	}
+
+	if focusedOption == nil {
+		log.Error("No focused option found")
+		return
+	}
+
+	log.Debugf("Focused option: %+v", focusedOption)
+	searchTerm := strings.ToLower(focusedOption.StringValue())
+
+	var choices []*discordgo.ApplicationCommandOptionChoice
+	for _, opt := range options {
+		if strings.Contains(strings.ToLower(opt), searchTerm) {
+			choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
+				Name:  opt,
+				Value: opt,
+			})
+		}
+	}
+
+	log.Debugf("Sending %d choices", len(choices))
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionApplicationCommandAutocompleteResult,
+		Data: &discordgo.InteractionResponseData{
+			Choices: choices,
+		},
+	})
+	if err != nil {
+		log.Errorf("Failed to respond with choices: %v", err)
+	}
 }
 
 func main() {
@@ -180,8 +281,13 @@ func main() {
 		log.Infof("Logged in as %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
 	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-			h(s, i)
+		switch i.Type {
+		case discordgo.InteractionApplicationCommand:
+			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+				h(s, i)
+			}
+		case discordgo.InteractionApplicationCommandAutocomplete:
+			autocompleteHandler(s, i)
 		}
 	})
 
