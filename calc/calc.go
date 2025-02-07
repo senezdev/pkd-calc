@@ -422,7 +422,7 @@ var roomMap = map[string]room{
 }
 
 func GetRooms() []string {
-	res := make([]string, len(roomMap))
+	res := make([]string, len(roomMap)-1)
 	i := 0
 	for _, v := range roomMap {
 		if v.Name == "Finish Room" {
@@ -790,7 +790,6 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 }
 
 func formatTime(seconds float64) string {
-	// Round up to nearest 0.5 if not already at .0 or .5
 	decimal := seconds - float64(int(seconds))
 	if decimal != 0.0 && decimal != 0.5 {
 		if decimal < 0.5 {

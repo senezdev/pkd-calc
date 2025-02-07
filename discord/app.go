@@ -237,6 +237,13 @@ func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	data := i.ApplicationCommandData()
 	log.Debugf("Command data: %+v", data)
 
+	selectedOptions := make(map[string]bool)
+	for _, opt := range data.Options {
+		if !opt.Focused {
+			selectedOptions[opt.StringValue()] = true
+		}
+	}
+
 	var focusedOption *discordgo.ApplicationCommandInteractionDataOption
 	for _, opt := range data.Options {
 		if opt.Focused {
@@ -255,7 +262,11 @@ func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	var choices []*discordgo.ApplicationCommandOptionChoice
 	for _, opt := range options {
-		if strings.Contains(strings.ToLower(opt), searchTerm) {
+		if selectedOptions[opt] {
+			continue
+		}
+
+		if strings.Contains(strings.ToLower(opt), searchTerm) || len(searchTerm) == 0 {
 			choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
 				Name:  opt,
 				Value: opt,
