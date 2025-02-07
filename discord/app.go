@@ -44,21 +44,21 @@ func init() {
 }
 
 var commands = []*discordgo.ApplicationCommand{
-	{
-		Name:        "basic-command",
-		Description: "Basic command",
-	},
-	{
-		Name:        "tournament",
-		Description: "Commands related to tournament management",
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Name:        "register",
-				Description: "Register a tournament",
-				Type:        discordgo.ApplicationCommandOptionSubCommand,
-			},
-		},
-	},
+	// {
+	// 	Name:        "basic-command",
+	// 	Description: "Basic command",
+	// },
+	// {
+	// 	Name:        "tournament",
+	// 	Description: "Commands related to tournament management",
+	// 	Options: []*discordgo.ApplicationCommandOption{
+	// 		{
+	// 			Name:        "register",
+	// 			Description: "Register a tournament",
+	// 			Type:        discordgo.ApplicationCommandOptionSubCommand,
+	// 		},
+	// 	},
+	// },
 	{
 		Name:        "calc",
 		Description: "Choose 8 rooms",
