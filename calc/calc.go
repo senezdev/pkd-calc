@@ -13,10 +13,25 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type MoveQuality int
+
+const (
+	BestMove MoveQuality = iota
+	GreatMove
+	BrilliantMove
+)
+
+var (
+	bestMoveColor      = color.RGBA{155, 199, 0, 200}
+	greatMoveColor     = color.RGBA{0, 121, 211, 200}
+	brilliantMoveColor = color.RGBA{48, 162, 197, 200}
+)
+
 type boostRoom struct {
 	Name      string
 	Time      float64
 	BoostTime float64
+	Quality   MoveQuality
 }
 
 type room struct {
@@ -34,11 +49,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      11.0,
 				BoostTime: 1.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      13.0,
 				BoostTime: 10.0,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -50,11 +67,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      12.25,
 				BoostTime: 3.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      18.5,
 				BoostTime: 16.0,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -66,6 +85,7 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      11.25,
 				BoostTime: 5,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -77,11 +97,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      20.0,
 				BoostTime: 7.5,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      17.5,
 				BoostTime: 15.5,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -93,11 +115,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      21.0,
 				BoostTime: 8.0,
+				Quality:   BrilliantMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      13.75,
 				BoostTime: 11.75,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -109,11 +133,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      12.25,
 				BoostTime: 2.5,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      15.0,
 				BoostTime: 13.0,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -125,11 +151,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      9.5,
 				BoostTime: 4.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      10.5,
 				BoostTime: 8.5,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -141,11 +169,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      10.5,
 				BoostTime: 3.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      11.0,
 				BoostTime: 8.0,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -157,16 +187,19 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1 + riley",
 				Time:      14.0,
 				BoostTime: 1.5,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      21.5,
 				BoostTime: 12.5,
+				Quality:   BrilliantMove,
 			},
 			{
 				Name:      "cp 2-3 + riley",
 				Time:      21.0,
 				BoostTime: 18.5,
+				Quality:   GreatMove,
 			},
 		},
 	},
@@ -178,16 +211,19 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      14.5,
 				BoostTime: 2.5,
+				Quality:   BrilliantMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      10.75,
 				BoostTime: 4.5,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 2-3",
 				Time:      15.0,
 				BoostTime: 13.0,
+				Quality:   GreatMove,
 			},
 		},
 	},
@@ -199,11 +235,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      15.5,
 				BoostTime: 4.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      13.5,
 				BoostTime: 11.0,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -215,11 +253,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      13.0,
 				BoostTime: 1.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      21.0,
 				BoostTime: 18.5,
+				Quality:   BrilliantMove,
 			},
 		},
 	},
@@ -231,17 +271,20 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      18.5,
 				BoostTime: 2.0,
+				Quality:   BestMove,
 			},
 
 			{
 				Name:      "cp 1-2",
 				Time:      16.5,
 				BoostTime: 7.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 2-3",
 				Time:      21.5,
 				BoostTime: 19.0,
+				Quality:   BrilliantMove,
 			},
 		},
 	},
@@ -253,11 +296,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      1.5,
 				BoostTime: 14.5,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      11.5,
 				BoostTime: 13.5,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -269,11 +314,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      8.5,
 				BoostTime: 1,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      14.0,
 				BoostTime: 10.0,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -285,11 +332,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      9.5,
 				BoostTime: 2.0,
+				Quality:   GreatMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      8.75,
 				BoostTime: 6,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -302,16 +351,19 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      24.5,
 				BoostTime: 3.5,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      22.5,
 				BoostTime: 13.5,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 2-3",
 				Time:      31.0,
 				BoostTime: 29.0,
+				Quality:   BrilliantMove,
 			},
 		},
 	},
@@ -323,11 +375,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      13.0,
 				BoostTime: 3.5,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      12.5,
 				BoostTime: 10.0,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -339,11 +393,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      15.25,
 				BoostTime: 1.5,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 2-3",
 				Time:      16.5,
 				BoostTime: 13.5,
+				Quality:   BrilliantMove,
 			},
 		},
 	},
@@ -355,11 +411,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      11.25,
 				BoostTime: 1.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      12.5,
 				BoostTime: 10.0,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -371,11 +429,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      10.0,
 				BoostTime: 2.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      20.0,
 				BoostTime: 17.5,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -387,11 +447,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      9.5,
 				BoostTime: 2.0,
+				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      17.0,
 				BoostTime: 14.0,
+				Quality:   BrilliantMove,
 			},
 		},
 	},
@@ -403,12 +465,14 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      12.5,
 				BoostTime: 3.0,
+				Quality:   BestMove,
 			},
 
 			{
 				Name:      "cp 1-2",
 				Time:      12.5,
 				BoostTime: 10.0,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -420,11 +484,13 @@ var roomMap = map[string]room{
 				Name:      "cp 0-1",
 				Time:      20.5,
 				BoostTime: 5.5,
+				Quality:   BrilliantMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      10.5,
 				BoostTime: 8.5,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -436,6 +502,7 @@ var roomMap = map[string]room{
 				Name:      "lol",
 				Time:      3.0,
 				BoostTime: 0.5,
+				Quality:   BestMove,
 			},
 		},
 	},
@@ -663,7 +730,6 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 	width, height := 775, 490
 	dc := gg.NewContext(width, height)
 
-	// Load and draw background image
 	bgFile, err := os.Open("images/background.png")
 	if err != nil {
 		log.Warn(err)
@@ -699,10 +765,11 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 	}
 
 	type RoomInfo struct {
-		text       string
-		highlight  bool
-		checkpoint string
-		pacelock   string
+		text        string
+		highlight   bool
+		checkpoint  string
+		pacelock    string
+		moveQuality MoveQuality
 	}
 
 	roomList = append(roomList, "Finish Room")
@@ -722,9 +789,11 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 	for _, br := range res.boostRooms {
 		roomsOutput[br.ind].highlight = true
 		roomsOutput[br.ind].checkpoint = roomMap[roomList[br.ind]].BoostStrats[br.stratInd].Name
+		roomsOutput[br.ind].moveQuality = roomMap[roomList[br.ind]].BoostStrats[br.stratInd].Quality
 		if math.Abs(br.pacelock) >= 1e-6 {
 			roomsOutput[br.ind].pacelock = fmt.Sprintf("pacelock %vs", br.pacelock)
 		}
+
 	}
 
 	if !roomsOutput[len(roomsOutput)-1].highlight {
@@ -753,18 +822,72 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 		rectX := float64(width)/2 - rectWidth/2
 		rectY := float64(y) - rectHeight/2
 
-		dc.Push()
 		if room.highlight {
-			dc.SetRGBA(1, 0.843, 0, 0.3)
-		} else {
-			dc.SetRGBA(0, 0, 0, 0.5)
-		}
-		dc.DrawRoundedRectangle(rectX, rectY, rectWidth, rectHeight, 10)
-		dc.Fill()
-		dc.Pop()
+			// First draw background with move quality color
+			dc.Push()
+			switch room.moveQuality {
+			case BrilliantMove:
+				dc.SetRGBA(float64(brilliantMoveColor.R)/255,
+					float64(brilliantMoveColor.G)/255,
+					float64(brilliantMoveColor.B)/255,
+					float64(brilliantMoveColor.A)/255)
+			case GreatMove:
+				dc.SetRGBA(float64(greatMoveColor.R)/255,
+					float64(greatMoveColor.G)/255,
+					float64(greatMoveColor.B)/255,
+					float64(greatMoveColor.A)/255)
+			default: // BestMove
+				dc.SetRGBA(float64(bestMoveColor.R)/255,
+					float64(bestMoveColor.G)/255,
+					float64(bestMoveColor.B)/255,
+					float64(bestMoveColor.A)/255)
+			}
+			dc.DrawRoundedRectangle(rectX, rectY, rectWidth, rectHeight, 10)
+			dc.Fill()
+			dc.Pop()
 
-		if room.highlight {
-			dc.SetColor(color.RGBA{255, 215, 0, 255})
+			// Draw icon based on move quality
+			switch room.moveQuality {
+			case BrilliantMove:
+				if img, err := gg.LoadImage("images/brilliant.png"); err == nil {
+					iconSize := rectHeight
+					imgHeight := float64(img.Bounds().Dy())
+					scale := iconSize / imgHeight
+
+					dc.Push()
+					dc.Translate(float64(int(rectX-25)), float64(y))
+					dc.Scale(scale, scale)
+					dc.DrawImageAnchored(img, 0, 0, 0.5, 0.5)
+					dc.Pop()
+				}
+			case GreatMove:
+				if img, err := gg.LoadImage("images/great.png"); err == nil {
+					iconSize := rectHeight
+					imgHeight := float64(img.Bounds().Dy())
+					scale := iconSize / imgHeight
+
+					dc.Push()
+					dc.Translate(float64(int(rectX-25)), float64(y))
+					dc.Scale(scale, scale)
+					dc.DrawImageAnchored(img, 0, 0, 0.5, 0.5)
+					dc.Pop()
+				}
+			default: // BestMove
+				if img, err := gg.LoadImage("images/best.png"); err == nil {
+					iconSize := rectHeight
+					imgHeight := float64(img.Bounds().Dy())
+					scale := iconSize / imgHeight
+
+					dc.Push()
+					dc.Translate(float64(int(rectX-25)), float64(y))
+					dc.Scale(scale, scale)
+					dc.DrawImageAnchored(img, 0, 0, 0.5, 0.5)
+					dc.Pop()
+				}
+			}
+
+			// Draw text in white
+			dc.SetColor(color.White)
 			displayText := fmt.Sprintf("%s (%s)", room.text, room.checkpoint)
 			dc.DrawStringAnchored(displayText, float64(width)/2, float64(y), 0.5, 0.5)
 
@@ -774,13 +897,18 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 				float64(y),
 				0, 0.5)
 		} else {
+			dc.Push()
+			dc.SetRGBA(0, 0, 0, 0.5)
+			dc.DrawRoundedRectangle(rectX, rectY, rectWidth, rectHeight, 10)
+			dc.Fill()
+			dc.Pop()
+
 			dc.SetColor(color.White)
 			dc.DrawStringAnchored(room.text, float64(width)/2, float64(y), 0.5, 0.5)
 		}
 
 		y += 40
 	}
-
 	y += 20
 
 	timeTexts := []struct {
