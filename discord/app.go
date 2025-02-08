@@ -199,6 +199,19 @@ func generateOptions() []*discordgo.ApplicationCommandOption {
 }
 
 func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Errorf("application panicked while handling a request: %v", err)
+		}
+
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Either you misspelled some room or the developer's an idiot. If it's the latter, go contact him and he'll fix me.",
+			},
+		})
+	}()
+
 	data := i.ApplicationCommandData()
 	selected := make([]string, 0, 8)
 
