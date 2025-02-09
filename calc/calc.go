@@ -114,7 +114,7 @@ var roomMap = map[string]room{
 			{
 				Name:      "cp 0-1",
 				Time:      21.0,
-				BoostTime: 8.0,
+				BoostTime: 1.0,
 				Quality:   BrilliantMove,
 			},
 			{
@@ -326,7 +326,7 @@ var roomMap = map[string]room{
 	},
 	"Rng Skip": {
 		Name:          "Rng Skip",
-		BoostlessTime: 11.75,
+		BoostlessTime: 12.0,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -650,14 +650,14 @@ func calcThreeBoost(roomList []string) (float64, []calcResultBoost, error) {
 							pacelock2 := max(0, 60-(timeBetweenBoosts23+secondBoostRoom.BoostStrats[secondBoostStrat].Time-secondBoostRoom.BoostStrats[secondBoostStrat].BoostTime+thirdBoostRoom.BoostStrats[thirdBoostStrat].BoostTime))
 							boostTime := boostlessTime - (firstBoostRoom.BoostlessTime - firstBoostRoom.BoostStrats[firstBoostStrat].Time) - (secondBoostRoom.BoostlessTime - secondBoostRoom.BoostStrats[secondBoostStrat].Time) - (thirdBoostRoom.BoostlessTime - thirdBoostRoom.BoostStrats[thirdBoostStrat].Time) + pacelock1 + pacelock2
 
-							// if i == 0 && j == 4 && k == 7 {
-							// 	log.Info("")
-							// 	log.Infof("%v %v %v", firstBoostStrat, secondBoostStrat, thirdBoostStrat)
-							// 	log.Infof("pacelock 1: %v", pacelock1)
-							// 	log.Infof("pacelock 2: %v", pacelock2)
-							// 	log.Infof("boostless: %v", boostlessTime)
-							// 	log.Infof("boost: %v", boostTime)
-							// }
+							if i == 0 && j == 3 && k == 7 {
+								log.Info("")
+								log.Infof("%v %v %v", firstBoostStrat, secondBoostStrat, thirdBoostStrat)
+								log.Infof("pacelock 1: %v", pacelock1)
+								log.Infof("pacelock 2: %v", pacelock2)
+								log.Infof("boostless: %v", boostlessTime)
+								log.Infof("boost: %v", boostTime)
+							}
 
 							if boostTime < bestBoostTime {
 								log.Tracef("boostless: %v", boostlessTime)
