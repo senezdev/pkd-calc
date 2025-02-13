@@ -727,7 +727,36 @@ func calcSeedInternal(roomList []string) (calcSeedResult, error) {
 }
 
 func CalcSeed(roomList []string) (bytes.Buffer, error) {
-	width, height := 775, 490
+	tempDC := gg.NewContext(1, 1)
+	if err := tempDC.LoadFontFace("font/minecraft_font.ttf", 24); err != nil {
+		log.Warn(err)
+		return bytes.Buffer{}, err
+	}
+
+	roomList = append(roomList, "Finish Room")
+	res, err := calcSeedInternal(roomList)
+	if err != nil {
+		log.Warn(err)
+		return bytes.Buffer{}, err
+	}
+
+	maxPacelockWidth := 0.0
+	for _, br := range res.boostRooms {
+		if math.Abs(br.pacelock) >= 1e-6 {
+			pacelockText := fmt.Sprintf("pacelock %vs", br.pacelock)
+			width, _ := tempDC.MeasureString(pacelockText)
+			if width > maxPacelockWidth {
+				maxPacelockWidth = width
+			}
+		}
+	}
+
+	width := 775
+	if maxPacelockWidth > 0 {
+		width = 775 + int(maxPacelockWidth) + 40 // Add padding
+	}
+	height := 490
+
 	dc := gg.NewContext(width, height)
 
 	bgFile, err := os.Open("images/background.png")
@@ -772,13 +801,6 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 		moveQuality MoveQuality
 	}
 
-	roomList = append(roomList, "Finish Room")
-	res, err := calcSeedInternal(roomList)
-	if err != nil {
-		log.Warn(err)
-		return bytes.Buffer{}, err
-	}
-
 	roomsOutput := make([]RoomInfo, 0, 9)
 	for i := 0; i < 9; i++ {
 		roomsOutput = append(roomsOutput, RoomInfo{
@@ -793,7 +815,6 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 		if math.Abs(br.pacelock) >= 1e-6 {
 			roomsOutput[br.ind].pacelock = fmt.Sprintf("pacelock %vs", br.pacelock)
 		}
-
 	}
 
 	if !roomsOutput[len(roomsOutput)-1].highlight {
