@@ -8,6 +8,7 @@ import (
 	_ "image/png"
 	"math"
 	"os"
+	"slices"
 
 	"github.com/fogleman/gg"
 	log "github.com/sirupsen/logrus"
@@ -538,26 +539,20 @@ type calcResultBoost struct {
 	pacelock float64
 }
 
-func calcTwoBoost(roomList []string) (float64, []calcResultBoost, error) {
+type calcResult struct {
+	time       float64
+	boostRooms []calcResultBoost
+}
+
+func calcTwoBoost(roomList []string) ([]calcResult, error) {
 	if roomMap[roomList[len(roomList)-1]].Name != "Finish Room" {
 		err := fmt.Errorf("last room is supposed to be finish room. this is a programming error")
 		log.Warn(err)
-		return 0, nil, err
-	}
-
-	bestBoostTime := 600.0
-	boostRooms := []calcResultBoost{
-		{
-			ind:      -1,
-			stratInd: -1,
-		},
-		{
-			ind:      -1,
-			stratInd: -1,
-		},
+		return nil, err
 	}
 
 	boostlessTime := calcBoostless(roomList)
+	results := make([]calcResult, 0, 81)
 
 	for i := 0; i < 9; i++ {
 		for j := i + 1; j < 9; j++ {
@@ -575,13 +570,9 @@ func calcTwoBoost(roomList []string) (float64, []calcResultBoost, error) {
 
 					boostTime := boostlessTime - (firstBoostRoom.BoostlessTime - firstBoostRoom.BoostStrats[firstBoostStrat].Time) - (secondBoostRoom.BoostlessTime - secondBoostRoom.BoostStrats[secondBoostStrat].Time) + pacelock
 
-					if boostTime < bestBoostTime {
-						log.Tracef("boostless: %v", boostlessTime)
-						log.Tracef("timesave: %v", (firstBoostRoom.BoostlessTime-firstBoostRoom.BoostStrats[firstBoostStrat].Time)+(secondBoostRoom.BoostlessTime-secondBoostRoom.BoostStrats[secondBoostStrat].Time)-pacelock)
-						log.Tracef("pacelock: %v", pacelock)
-
-						bestBoostTime = boostTime
-						boostRooms = []calcResultBoost{
+					results = append(results, calcResult{
+						time: boostTime,
+						boostRooms: []calcResultBoost{
 							{
 								ind:      i,
 								stratInd: firstBoostStrat,
@@ -591,40 +582,33 @@ func calcTwoBoost(roomList []string) (float64, []calcResultBoost, error) {
 								stratInd: secondBoostStrat,
 								pacelock: pacelock,
 							},
-						}
-					}
+						},
+					})
 				}
 			}
 		}
 	}
 
-	return bestBoostTime, boostRooms, nil
+	slices.SortFunc(results, func(a, b calcResult) int {
+		if a.time < b.time {
+			return -1
+		}
+
+		return 1
+	})
+
+	return results, nil
 }
 
-func calcThreeBoost(roomList []string) (float64, []calcResultBoost, error) {
+func calcThreeBoost(roomList []string) ([]calcResult, error) {
 	if roomMap[roomList[len(roomList)-1]].Name != "Finish Room" {
 		err := fmt.Errorf("last room is supposed to be finish room. this is a programming error")
 		log.Warn(err)
-		return 0, nil, err
-	}
-
-	bestBoostTime := 600.0
-	boostRooms := []calcResultBoost{
-		{
-			ind:      -1,
-			stratInd: -1,
-		},
-		{
-			ind:      -1,
-			stratInd: -1,
-		},
-		{
-			ind:      -1,
-			stratInd: -1,
-		},
+		return nil, err
 	}
 
 	boostlessTime := calcBoostless(roomList)
+	results := make([]calcResult, 0, 729)
 
 	for i := 0; i < 9; i++ {
 		for j := i + 1; j < 9; j++ {
@@ -650,23 +634,9 @@ func calcThreeBoost(roomList []string) (float64, []calcResultBoost, error) {
 							pacelock2 := max(0, 60-(timeBetweenBoosts23+secondBoostRoom.BoostStrats[secondBoostStrat].Time-secondBoostRoom.BoostStrats[secondBoostStrat].BoostTime+thirdBoostRoom.BoostStrats[thirdBoostStrat].BoostTime))
 							boostTime := boostlessTime - (firstBoostRoom.BoostlessTime - firstBoostRoom.BoostStrats[firstBoostStrat].Time) - (secondBoostRoom.BoostlessTime - secondBoostRoom.BoostStrats[secondBoostStrat].Time) - (thirdBoostRoom.BoostlessTime - thirdBoostRoom.BoostStrats[thirdBoostStrat].Time) + pacelock1 + pacelock2
 
-							if i == 0 && j == 3 && k == 7 {
-								log.Info("")
-								log.Infof("%v %v %v", firstBoostStrat, secondBoostStrat, thirdBoostStrat)
-								log.Infof("pacelock 1: %v", pacelock1)
-								log.Infof("pacelock 2: %v", pacelock2)
-								log.Infof("boostless: %v", boostlessTime)
-								log.Infof("boost: %v", boostTime)
-							}
-
-							if boostTime < bestBoostTime {
-								log.Tracef("boostless: %v", boostlessTime)
-								// log.Tracef("timesave: %v", (firstBoostRoom.BoostlessTime-firstBoostRoom.BoostStrats[firstBoostStrat].Time)+(secondBoostRoom.BoostlessTime-secondBoostRoom.BoostStrats[secondBoostStrat].Time)-pacelock)
-								log.Tracef("pacelock 1: %v", pacelock1)
-								log.Tracef("pacelock 2: %v", pacelock2)
-
-								bestBoostTime = boostTime
-								boostRooms = []calcResultBoost{
+							results = append(results, calcResult{
+								time: boostTime,
+								boostRooms: []calcResultBoost{
 									{
 										ind:      i,
 										stratInd: firstBoostStrat,
@@ -681,8 +651,8 @@ func calcThreeBoost(roomList []string) (float64, []calcResultBoost, error) {
 										stratInd: thirdBoostStrat,
 										pacelock: pacelock2,
 									},
-								}
-							}
+								},
+							})
 						}
 					}
 				}
@@ -690,7 +660,15 @@ func calcThreeBoost(roomList []string) (float64, []calcResultBoost, error) {
 		}
 	}
 
-	return bestBoostTime, boostRooms, nil
+	slices.SortFunc(results, func(a, b calcResult) int {
+		if a.time < b.time {
+			return -1
+		}
+
+		return 1
+	})
+
+	return results, nil
 }
 
 type calcSeedResult struct {
@@ -699,30 +677,58 @@ type calcSeedResult struct {
 	boostRooms    []calcResultBoost
 }
 
+func mergeSortedResults(a, b []calcResult) []calcResult {
+	merged := make([]calcResult, 0, len(a)+len(b))
+	i, j := 0, 0
+
+	for i < len(a) && j < len(b) {
+		if a[i].time <= b[j].time {
+			merged = append(merged, a[i])
+			i++
+		} else {
+			merged = append(merged, b[j])
+			j++
+		}
+	}
+
+	// Append remaining elements from either array
+	merged = append(merged, a[i:]...)
+	merged = append(merged, b[j:]...)
+
+	return merged
+}
+
 func calcSeedInternal(roomList []string) (calcSeedResult, error) {
 	res := calcSeedResult{boostlessTime: calcBoostless(roomList)}
 
-	twoBoost, twoBoostRooms, err := calcTwoBoost(roomList)
+	twoBoost, err := calcTwoBoost(roomList)
 	if err != nil {
 		log.Warn(err)
 		return calcSeedResult{}, err
 	}
 
-	threeBoost, threeBoostRooms, err := calcThreeBoost(roomList)
+	if len(twoBoost) == 0 {
+		err := fmt.Errorf("two boost calculation returned an empty array")
+		log.Warn(err)
+		return calcSeedResult{}, err
+	}
+
+	threeBoost, err := calcThreeBoost(roomList)
 	if err != nil {
 		log.Warn(err)
 		return calcSeedResult{}, err
 	}
 
-	if twoBoost < threeBoost {
-		res.boostTime = twoBoost
-		res.boostRooms = twoBoostRooms
-
-		return res, nil
+	if len(threeBoost) == 0 {
+		err := fmt.Errorf("two boost calculation returned an empty array")
+		log.Warn(err)
+		return calcSeedResult{}, err
 	}
 
-	res.boostTime = threeBoost
-	res.boostRooms = threeBoostRooms
+	results := mergeSortedResults(twoBoost, threeBoost)
+	res.boostTime = results[0].time
+	res.boostRooms = results[0].boostRooms
+
 	return res, nil
 }
 
