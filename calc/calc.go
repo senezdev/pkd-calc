@@ -698,36 +698,41 @@ func mergeSortedResults(a, b []calcResult) []calcResult {
 	return merged
 }
 
-func calcSeedInternal(roomList []string) (calcSeedResult, error) {
-	res := calcSeedResult{boostlessTime: calcBoostless(roomList)}
+func calcSeedInternal(roomList []string) ([]calcSeedResult, error) {
+	boostlessTime := calcBoostless(roomList)
+	res := make([]calcSeedResult, 0, 5)
 
 	twoBoost, err := calcTwoBoost(roomList)
 	if err != nil {
 		log.Warn(err)
-		return calcSeedResult{}, err
+		return nil, err
 	}
 
 	if len(twoBoost) == 0 {
 		err := fmt.Errorf("two boost calculation returned an empty array")
 		log.Warn(err)
-		return calcSeedResult{}, err
+		return nil, err
 	}
 
 	threeBoost, err := calcThreeBoost(roomList)
 	if err != nil {
 		log.Warn(err)
-		return calcSeedResult{}, err
+		return nil, err
 	}
 
 	if len(threeBoost) == 0 {
 		err := fmt.Errorf("two boost calculation returned an empty array")
 		log.Warn(err)
-		return calcSeedResult{}, err
+		return nil, err
 	}
 
-	results := mergeSortedResults(twoBoost, threeBoost)
-	res.boostTime = results[0].time
-	res.boostRooms = results[0].boostRooms
+	for _, r := range mergeSortedResults(twoBoost, threeBoost) {
+		res = append(res, calcSeedResult{
+			boostlessTime: boostlessTime,
+			boostTime:     r.time,
+			boostRooms:    r.boostRooms,
+		})
+	}
 
 	return res, nil
 }
@@ -740,12 +745,13 @@ func CalcSeed(roomList []string) (bytes.Buffer, error) {
 	}
 
 	roomList = append(roomList, "Finish Room")
-	res, err := calcSeedInternal(roomList)
+	calcRes, err := calcSeedInternal(roomList)
 	if err != nil {
 		log.Warn(err)
 		return bytes.Buffer{}, err
 	}
 
+	res := calcRes[0]
 	maxPacelockWidth := 0.0
 	for _, br := range res.boostRooms {
 		if math.Abs(br.pacelock) >= 1e-6 {
