@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
 	"pkd-bot/calc"
 	"pkd-bot/tournaments"
@@ -44,21 +45,6 @@ func init() {
 }
 
 var commands = []*discordgo.ApplicationCommand{
-	// {
-	// 	Name:        "basic-command",
-	// 	Description: "Basic command",
-	// },
-	// {
-	// 	Name:        "tournament",
-	// 	Description: "Commands related to tournament management",
-	// 	Options: []*discordgo.ApplicationCommandOption{
-	// 		{
-	// 			Name:        "register",
-	// 			Description: "Register a tournament",
-	// 			Type:        discordgo.ApplicationCommandOptionSubCommand,
-	// 		},
-	// 	},
-	// },
 	{
 		Name:        "calc",
 		Description: "Choose 8 rooms",
@@ -163,9 +149,6 @@ func registerTournamentHandler(s *discordgo.Session, i *discordgo.InteractionCre
 		}
 
 		s.ChannelMessageSend(m.ChannelID, "Tournament successfully registered!")
-
-		// Remove this handler after processing
-		// s.RemoveHandler(s.HandlerRemove)
 	})
 }
 
@@ -189,7 +172,7 @@ func generateOptions() []*discordgo.ApplicationCommandOption {
 	for i := 1; i <= 8; i++ {
 		params = append(params, &discordgo.ApplicationCommandOption{
 			Type:         discordgo.ApplicationCommandOptionString,
-			Name:         fmt.Sprintf("room_%d", i), // Use fmt.Sprintf instead of string conversion
+			Name:         fmt.Sprintf("room_%d", i),
 			Description:  fmt.Sprintf("Choose option for room %d", i),
 			Required:     true,
 			Autocomplete: true,
@@ -198,18 +181,229 @@ func generateOptions() []*discordgo.ApplicationCommandOption {
 	return params
 }
 
+const (
+	ButtonPrevious   = "previous"
+	ButtonNext       = "next"
+	ButtonTwoBoost   = "two_boost"
+	ButtonThreeBoost = "three_boost"
+	ButtonAnyBoost   = "any_boost"
+)
+
+func createNavigationButtons(currentIndex, totalResults int, currentFilter string) []discordgo.MessageComponent {
+	return []discordgo.MessageComponent{
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					CustomID: ButtonPrevious,
+					Style:    discordgo.SecondaryButton,
+					Emoji: &discordgo.ComponentEmoji{
+						Name: "⬅️",
+					},
+					Disabled: currentIndex <= 0,
+				},
+				discordgo.Button{
+					CustomID: ButtonNext,
+					Style:    discordgo.SecondaryButton,
+					Emoji: &discordgo.ComponentEmoji{
+						Name: "➡️",
+					},
+					Disabled: currentIndex >= totalResults-1,
+				},
+			},
+		},
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					CustomID: ButtonTwoBoost,
+					Label:    "2 Boost",
+					Style: func() discordgo.ButtonStyle {
+						if currentFilter == ButtonTwoBoost {
+							return discordgo.PrimaryButton
+						}
+						return discordgo.SecondaryButton
+					}(),
+				},
+				discordgo.Button{
+					CustomID: ButtonThreeBoost,
+					Label:    "3 Boost",
+					Style: func() discordgo.ButtonStyle {
+						if currentFilter == ButtonThreeBoost {
+							return discordgo.PrimaryButton
+						}
+						return discordgo.SecondaryButton
+					}(),
+				},
+				discordgo.Button{
+					CustomID: ButtonAnyBoost,
+					Label:    "Any Boost",
+					Style: func() discordgo.ButtonStyle {
+						if currentFilter == ButtonAnyBoost {
+							return discordgo.PrimaryButton
+						}
+						return discordgo.SecondaryButton
+					}(),
+				},
+			},
+		},
+	}
+}
+
+type ResultState struct {
+	Rooms   []string
+	Results []calc.CalcSeedResult
+	Index   int
+	Filter  string
+}
+
+var messageStates = make(map[string]*ResultState)
+
+func cleanupMessageState(messageID string, s *discordgo.Session, channelID string) {
+	time.Sleep(15 * time.Second)
+
+	// Get the current message
+	message, err := s.ChannelMessage(channelID, messageID)
+	if err != nil {
+		log.Errorf("Failed to get message for cleanup: %v", err)
+		return
+	}
+
+	// Get the current image
+	if len(message.Attachments) == 0 {
+		log.Error("No attachments found in message")
+		return
+	}
+
+	// Download the current image
+	resp, err := http.Get(message.Attachments[0].URL)
+	if err != nil {
+		log.Errorf("Failed to get attachment: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("Failed to read attachment data: %v", err)
+		return
+	}
+
+	// Keep the last image but remove buttons
+	_, err = s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+		ID:          messageID,
+		Channel:     channelID,
+		Files:       []*discordgo.File{{Name: "result.png", Reader: bytes.NewReader(data)}},
+		Components:  &[]discordgo.MessageComponent{},   // Empty slice removes buttons
+		Attachments: &[]*discordgo.MessageAttachment{}, // This tells Discord to remove all existing attachments
+	})
+	if err != nil {
+		log.Errorf("Failed to remove buttons: %v", err)
+	}
+
+	delete(messageStates, messageID)
+}
+
+func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	state, exists := messageStates[i.Message.ID]
+	if !exists {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "This interaction has expired. Please run the command again.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
+	// Acknowledge the interaction first
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredMessageUpdate,
+	})
+	if err != nil {
+		log.Errorf("Failed to acknowledge interaction: %v", err)
+		return
+	}
+
+	// Store original results before filtering
+	originalResults := state.Results
+
+	switch i.MessageComponentData().CustomID {
+	case ButtonPrevious:
+		if state.Index > 0 {
+			state.Index--
+		}
+	case ButtonNext:
+		if state.Index < len(state.Results)-1 {
+			state.Index++
+		}
+	case ButtonTwoBoost, ButtonThreeBoost, ButtonAnyBoost:
+		state.Filter = i.MessageComponentData().CustomID
+		state.Index = 0
+
+		// Filter results based on boost count
+		filteredResults := make([]calc.CalcSeedResult, 0)
+		for _, result := range originalResults { // Use originalResults here
+			boostCount := len(result.BoostRooms)
+			switch state.Filter {
+			case ButtonTwoBoost:
+				if boostCount == 2 {
+					filteredResults = append(filteredResults, result)
+				}
+			case ButtonThreeBoost:
+				if boostCount == 3 {
+					filteredResults = append(filteredResults, result)
+				}
+			case ButtonAnyBoost:
+				filteredResults = append(filteredResults, result)
+			}
+		}
+		state.Results = filteredResults
+	}
+
+	// Make sure we have results to display
+	if len(state.Results) == 0 {
+		log.Error("No results available after filtering")
+		return
+	}
+
+	// Draw new image for the current index
+	currentResult := []calc.CalcSeedResult{state.Results[state.Index]}
+	img, err := drawCalcResults(state.Rooms, currentResult)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	// Create navigation buttons with updated state
+	navButtons := createNavigationButtons(state.Index, len(state.Results), state.Filter)
+
+	// Update message with new content
+	_, err = s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+		ID:          i.Message.ID,
+		Channel:     i.ChannelID,
+		Files:       []*discordgo.File{{Name: "result.png", Reader: bytes.NewReader(img.Bytes())}},
+		Components:  &navButtons,
+		Attachments: &[]*discordgo.MessageAttachment{},
+	})
+	if err != nil {
+		log.Errorf("Failed to update message: %v", err)
+	}
+
+	// Update the state in our map
+	messageStates[i.Message.ID] = state
+}
+
 func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Errorf("application panicked while handling a request: %v", err)
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "Either you misspelled some room or the developer's an idiot. If it's the latter, go contact him and he'll fix me.",
+				},
+			})
 		}
-
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Either you misspelled some room or the developer's an idiot. If it's the latter, go contact him and he'll fix me.",
-			},
-		})
 	}()
 
 	data := i.ApplicationCommandData()
@@ -222,7 +416,6 @@ func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	res, err := calc.CalcSeed(selected)
 	if err != nil {
 		log.Error(err)
-
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -232,10 +425,10 @@ func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	img, err := drawCalcResults(selected, res)
+	initialResult := []calc.CalcSeedResult{res[0]}
+	img, err := drawCalcResults(selected, initialResult)
 	if err != nil {
 		log.Error(err)
-
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -245,7 +438,8 @@ func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	// Send initial response
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Files: []*discordgo.File{
@@ -254,8 +448,31 @@ func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 					Reader: bytes.NewReader(img.Bytes()),
 				},
 			},
+			Components: createNavigationButtons(0, len(res), ButtonAnyBoost),
 		},
 	})
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	// Get the message ID from the response
+	message, err := s.InteractionResponse(i.Interaction)
+	if err != nil {
+		log.Errorf("Failed to get interaction response: %v", err)
+		return
+	}
+
+	// Store state with message ID
+	messageStates[message.ID] = &ResultState{
+		Rooms:   selected,
+		Results: res,
+		Index:   0,
+		Filter:  ButtonAnyBoost,
+	}
+
+	// Start cleanup timer
+	go cleanupMessageState(message.ID, s, message.ChannelID)
 }
 
 func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -326,6 +543,8 @@ func main() {
 			}
 		case discordgo.InteractionApplicationCommandAutocomplete:
 			autocompleteHandler(s, i)
+		case discordgo.InteractionMessageComponent:
+			buttonHandler(s, i)
 		}
 	})
 
@@ -341,7 +560,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("Cannot create '%v' command: %v", v.Name, err)
 		}
-
 		registeredCommands[i] = cmd
 	}
 
