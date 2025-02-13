@@ -257,49 +257,53 @@ type ResultState struct {
 
 var messageStates = make(map[string]*ResultState)
 
-func cleanupMessageState(messageID string, s *discordgo.Session, channelID string) {
-	time.Sleep(15 * time.Second)
+var cleanupTimers = make(map[string]*time.Timer)
 
-	// Get the current message
-	message, err := s.ChannelMessage(channelID, messageID)
-	if err != nil {
-		log.Errorf("Failed to get message for cleanup: %v", err)
-		return
-	}
+// Modify cleanupMessageState to use a timer
+func cleanupMessageState(messageID string, s *discordgo.Session, channelID string) *time.Timer {
+	return time.AfterFunc(15*time.Second, func() {
+		// Get the current message
+		message, err := s.ChannelMessage(channelID, messageID)
+		if err != nil {
+			log.Errorf("Failed to get message for cleanup: %v", err)
+			return
+		}
 
-	// Get the current image
-	if len(message.Attachments) == 0 {
-		log.Error("No attachments found in message")
-		return
-	}
+		// Get the current image
+		if len(message.Attachments) == 0 {
+			log.Error("No attachments found in message")
+			return
+		}
 
-	// Download the current image
-	resp, err := http.Get(message.Attachments[0].URL)
-	if err != nil {
-		log.Errorf("Failed to get attachment: %v", err)
-		return
-	}
-	defer resp.Body.Close()
+		// Download the current image
+		resp, err := http.Get(message.Attachments[0].URL)
+		if err != nil {
+			log.Errorf("Failed to get attachment: %v", err)
+			return
+		}
+		defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Errorf("Failed to read attachment data: %v", err)
-		return
-	}
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Errorf("Failed to read attachment data: %v", err)
+			return
+		}
 
-	// Keep the last image but remove buttons
-	_, err = s.ChannelMessageEditComplex(&discordgo.MessageEdit{
-		ID:          messageID,
-		Channel:     channelID,
-		Files:       []*discordgo.File{{Name: "result.png", Reader: bytes.NewReader(data)}},
-		Components:  &[]discordgo.MessageComponent{},   // Empty slice removes buttons
-		Attachments: &[]*discordgo.MessageAttachment{}, // This tells Discord to remove all existing attachments
+		// Keep the last image but remove buttons
+		_, err = s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+			ID:          messageID,
+			Channel:     channelID,
+			Files:       []*discordgo.File{{Name: "result.png", Reader: bytes.NewReader(data)}},
+			Components:  &[]discordgo.MessageComponent{},
+			Attachments: &[]*discordgo.MessageAttachment{},
+		})
+		if err != nil {
+			log.Errorf("Failed to remove buttons: %v", err)
+		}
+
+		delete(messageStates, messageID)
+		delete(cleanupTimers, messageID)
 	})
-	if err != nil {
-		log.Errorf("Failed to remove buttons: %v", err)
-	}
-
-	delete(messageStates, messageID)
 }
 
 func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -322,6 +326,11 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if err != nil {
 		log.Errorf("Failed to acknowledge interaction: %v", err)
 		return
+	}
+
+	// Reset the cleanup timer
+	if timer, exists := cleanupTimers[i.Message.ID]; exists {
+		timer.Reset(15 * time.Second)
 	}
 
 	// Store original results before filtering
@@ -377,7 +386,6 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// Create navigation buttons with updated state
 	navButtons := createNavigationButtons(state.Index, len(state.Results), state.Filter)
 
-	// Update message with new content
 	_, err = s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 		ID:          i.Message.ID,
 		Channel:     i.ChannelID,
@@ -387,6 +395,13 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 	if err != nil {
 		log.Errorf("Failed to update message: %v", err)
+		return
+	}
+
+	// Follow up with the interaction to confirm it's complete
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{})
+	if err != nil {
+		log.Errorf("Failed to edit interaction response: %v", err)
 	}
 
 	// Update the state in our map
@@ -471,8 +486,8 @@ func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Filter:  ButtonAnyBoost,
 	}
 
-	// Start cleanup timer
-	go cleanupMessageState(message.ID, s, message.ChannelID)
+	timer := cleanupMessageState(message.ID, s, message.ChannelID)
+	cleanupTimers[message.ID] = timer
 }
 
 func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
