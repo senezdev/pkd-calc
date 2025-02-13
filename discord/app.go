@@ -231,13 +231,27 @@ func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		})
 		return
 	}
+
+	img, err := drawCalcResults(selected, res)
+	if err != nil {
+		log.Error(err)
+
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Go tell the developer he's an idiot 'cause something's broken idk",
+			},
+		})
+		return
+	}
+
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Files: []*discordgo.File{
 				{
 					Name:   "result.png",
-					Reader: bytes.NewReader(res.Bytes()),
+					Reader: bytes.NewReader(img.Bytes()),
 				},
 			},
 		},

@@ -1,16 +1,11 @@
 package calc
 
 import (
-	"bytes"
 	"fmt"
-	"image"
 	"image/color"
 	_ "image/png"
-	"math"
-	"os"
 	"slices"
 
-	"github.com/fogleman/gg"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -41,7 +36,7 @@ type room struct {
 	BoostStrats   []boostRoom
 }
 
-var roomMap = map[string]room{
+var RoomMap = map[string]room{
 	"Around Pillars": {
 		Name:          "Around Pillars",
 		BoostlessTime: 17.25,
@@ -510,9 +505,9 @@ var roomMap = map[string]room{
 }
 
 func GetRooms() []string {
-	res := make([]string, len(roomMap)-1)
+	res := make([]string, len(RoomMap)-1)
 	i := 0
-	for _, v := range roomMap {
+	for _, v := range RoomMap {
 		if v.Name == "Finish Room" {
 			continue
 		}
@@ -527,25 +522,25 @@ func GetRooms() []string {
 func calcBoostless(roomList []string) float64 {
 	time := 0.0
 	for _, room := range roomList {
-		time += roomMap[room].BoostlessTime
+		time += RoomMap[room].BoostlessTime
 	}
 
 	return time
 }
 
-type calcResultBoost struct {
-	ind      int
-	stratInd int
-	pacelock float64
+type CalcResultBoost struct {
+	Ind      int
+	StratInd int
+	Pacelock float64
 }
 
 type calcResult struct {
 	time       float64
-	boostRooms []calcResultBoost
+	boostRooms []CalcResultBoost
 }
 
 func calcTwoBoost(roomList []string) ([]calcResult, error) {
-	if roomMap[roomList[len(roomList)-1]].Name != "Finish Room" {
+	if RoomMap[roomList[len(roomList)-1]].Name != "Finish Room" {
 		err := fmt.Errorf("last room is supposed to be finish room. this is a programming error")
 		log.Warn(err)
 		return nil, err
@@ -556,12 +551,12 @@ func calcTwoBoost(roomList []string) ([]calcResult, error) {
 
 	for i := 0; i < 9; i++ {
 		for j := i + 1; j < 9; j++ {
-			firstBoostRoom := roomMap[roomList[i]]
-			secondBoostRoom := roomMap[roomList[j]]
+			firstBoostRoom := RoomMap[roomList[i]]
+			secondBoostRoom := RoomMap[roomList[j]]
 
 			timeBetweenBoosts := 0.0
 			for k := i + 1; k < j; k++ {
-				timeBetweenBoosts += roomMap[roomList[k]].BoostlessTime
+				timeBetweenBoosts += RoomMap[roomList[k]].BoostlessTime
 			}
 
 			for firstBoostStrat := 0; firstBoostStrat < len(firstBoostRoom.BoostStrats); firstBoostStrat++ {
@@ -572,15 +567,15 @@ func calcTwoBoost(roomList []string) ([]calcResult, error) {
 
 					results = append(results, calcResult{
 						time: boostTime,
-						boostRooms: []calcResultBoost{
+						boostRooms: []CalcResultBoost{
 							{
-								ind:      i,
-								stratInd: firstBoostStrat,
+								Ind:      i,
+								StratInd: firstBoostStrat,
 							},
 							{
-								ind:      j,
-								stratInd: secondBoostStrat,
-								pacelock: pacelock,
+								Ind:      j,
+								StratInd: secondBoostStrat,
+								Pacelock: pacelock,
 							},
 						},
 					})
@@ -601,7 +596,7 @@ func calcTwoBoost(roomList []string) ([]calcResult, error) {
 }
 
 func calcThreeBoost(roomList []string) ([]calcResult, error) {
-	if roomMap[roomList[len(roomList)-1]].Name != "Finish Room" {
+	if RoomMap[roomList[len(roomList)-1]].Name != "Finish Room" {
 		err := fmt.Errorf("last room is supposed to be finish room. this is a programming error")
 		log.Warn(err)
 		return nil, err
@@ -613,17 +608,17 @@ func calcThreeBoost(roomList []string) ([]calcResult, error) {
 	for i := 0; i < 9; i++ {
 		for j := i + 1; j < 9; j++ {
 			for k := j + 1; k < 9; k++ {
-				firstBoostRoom := roomMap[roomList[i]]
-				secondBoostRoom := roomMap[roomList[j]]
-				thirdBoostRoom := roomMap[roomList[k]]
+				firstBoostRoom := RoomMap[roomList[i]]
+				secondBoostRoom := RoomMap[roomList[j]]
+				thirdBoostRoom := RoomMap[roomList[k]]
 
 				timeBetweenBoosts12 := 0.0
 				for m := i + 1; m < j; m++ {
-					timeBetweenBoosts12 += roomMap[roomList[m]].BoostlessTime
+					timeBetweenBoosts12 += RoomMap[roomList[m]].BoostlessTime
 				}
 				timeBetweenBoosts23 := 0.0
 				for m := j + 1; m < k; m++ {
-					timeBetweenBoosts23 += roomMap[roomList[m]].BoostlessTime
+					timeBetweenBoosts23 += RoomMap[roomList[m]].BoostlessTime
 				}
 
 				for firstBoostStrat := 0; firstBoostStrat < len(firstBoostRoom.BoostStrats); firstBoostStrat++ {
@@ -636,20 +631,20 @@ func calcThreeBoost(roomList []string) ([]calcResult, error) {
 
 							results = append(results, calcResult{
 								time: boostTime,
-								boostRooms: []calcResultBoost{
+								boostRooms: []CalcResultBoost{
 									{
-										ind:      i,
-										stratInd: firstBoostStrat,
+										Ind:      i,
+										StratInd: firstBoostStrat,
 									},
 									{
-										ind:      j,
-										stratInd: secondBoostStrat,
-										pacelock: pacelock1,
+										Ind:      j,
+										StratInd: secondBoostStrat,
+										Pacelock: pacelock1,
 									},
 									{
-										ind:      k,
-										stratInd: thirdBoostStrat,
-										pacelock: pacelock2,
+										Ind:      k,
+										StratInd: thirdBoostStrat,
+										Pacelock: pacelock2,
 									},
 								},
 							})
@@ -671,10 +666,10 @@ func calcThreeBoost(roomList []string) ([]calcResult, error) {
 	return results, nil
 }
 
-type calcSeedResult struct {
-	boostlessTime float64
-	boostTime     float64
-	boostRooms    []calcResultBoost
+type CalcSeedResult struct {
+	BoostlessTime float64
+	BoostTime     float64
+	BoostRooms    []CalcResultBoost
 }
 
 func mergeSortedResults(a, b []calcResult) []calcResult {
@@ -698,9 +693,9 @@ func mergeSortedResults(a, b []calcResult) []calcResult {
 	return merged
 }
 
-func calcSeedInternal(roomList []string) ([]calcSeedResult, error) {
+func calcSeedInternal(roomList []string) ([]CalcSeedResult, error) {
 	boostlessTime := calcBoostless(roomList)
-	res := make([]calcSeedResult, 0, 5)
+	res := make([]CalcSeedResult, 0, 5)
 
 	twoBoost, err := calcTwoBoost(roomList)
 	if err != nil {
@@ -727,273 +722,17 @@ func calcSeedInternal(roomList []string) ([]calcSeedResult, error) {
 	}
 
 	for _, r := range mergeSortedResults(twoBoost, threeBoost) {
-		res = append(res, calcSeedResult{
-			boostlessTime: boostlessTime,
-			boostTime:     r.time,
-			boostRooms:    r.boostRooms,
+		res = append(res, CalcSeedResult{
+			BoostlessTime: boostlessTime,
+			BoostTime:     r.time,
+			BoostRooms:    r.boostRooms,
 		})
 	}
 
 	return res, nil
 }
 
-func CalcSeed(roomList []string) (bytes.Buffer, error) {
-	tempDC := gg.NewContext(1, 1)
-	if err := tempDC.LoadFontFace("font/minecraft_font.ttf", 24); err != nil {
-		log.Warn(err)
-		return bytes.Buffer{}, err
-	}
-
+func CalcSeed(roomList []string) ([]CalcSeedResult, error) {
 	roomList = append(roomList, "Finish Room")
-	calcRes, err := calcSeedInternal(roomList)
-	if err != nil {
-		log.Warn(err)
-		return bytes.Buffer{}, err
-	}
-
-	res := calcRes[0]
-	maxPacelockWidth := 0.0
-	for _, br := range res.boostRooms {
-		if math.Abs(br.pacelock) >= 1e-6 {
-			pacelockText := fmt.Sprintf("pacelock %vs", br.pacelock)
-			width, _ := tempDC.MeasureString(pacelockText)
-			if width > maxPacelockWidth {
-				maxPacelockWidth = width
-			}
-		}
-	}
-
-	width := 775
-	if maxPacelockWidth > 0 {
-		width = 775 + int(maxPacelockWidth) + 40 // Add padding
-	}
-	height := 490
-
-	dc := gg.NewContext(width, height)
-
-	bgFile, err := os.Open("images/background.png")
-	if err != nil {
-		log.Warn(err)
-		return bytes.Buffer{}, err
-	}
-	defer bgFile.Close()
-
-	bgImage, _, err := image.Decode(bgFile)
-	if err != nil {
-		log.Warn(err)
-		return bytes.Buffer{}, err
-	}
-
-	bgWidth := bgImage.Bounds().Dx()
-	bgHeight := bgImage.Bounds().Dy()
-	scaleX := float64(width) / float64(bgWidth)
-	scaleY := float64(height) / float64(bgHeight)
-	scale := math.Max(scaleX, scaleY)
-
-	newWidth := float64(bgWidth) * scale
-	newHeight := float64(bgHeight) * scale
-	x := (float64(width) - newWidth) / 2
-	y := (float64(height) - newHeight) / 2
-
-	dc.Push()
-	dc.Scale(scale, scale)
-	dc.DrawImage(bgImage, int(x/scale), int(y/scale))
-	dc.Pop()
-
-	if err := dc.LoadFontFace("font/minecraft_font.ttf", 24); err != nil {
-		log.Warn(err)
-		return bytes.Buffer{}, err
-	}
-
-	type RoomInfo struct {
-		text        string
-		highlight   bool
-		checkpoint  string
-		pacelock    string
-		moveQuality MoveQuality
-	}
-
-	roomsOutput := make([]RoomInfo, 0, 9)
-	for i := 0; i < 9; i++ {
-		roomsOutput = append(roomsOutput, RoomInfo{
-			text: roomList[i],
-		})
-	}
-
-	for _, br := range res.boostRooms {
-		roomsOutput[br.ind].highlight = true
-		roomsOutput[br.ind].checkpoint = roomMap[roomList[br.ind]].BoostStrats[br.stratInd].Name
-		roomsOutput[br.ind].moveQuality = roomMap[roomList[br.ind]].BoostStrats[br.stratInd].Quality
-		if math.Abs(br.pacelock) >= 1e-6 {
-			roomsOutput[br.ind].pacelock = fmt.Sprintf("pacelock %vs", br.pacelock)
-		}
-	}
-
-	if !roomsOutput[len(roomsOutput)-1].highlight {
-		roomsOutput = roomsOutput[:8]
-	}
-
-	// Calculate maximum text width for consistent rectangle size
-	var maxWidth float64
-	for _, stat := range roomsOutput {
-		displayText := stat.text
-		if stat.highlight {
-			displayText = fmt.Sprintf("%s (%s)", stat.text, stat.checkpoint)
-		}
-		width, _ := dc.MeasureString(displayText)
-		if width > maxWidth {
-			maxWidth = width
-		}
-	}
-
-	rectWidth := maxWidth + 40
-	rectHeight := float64(30)
-
-	y = 40
-
-	for _, room := range roomsOutput {
-		rectX := float64(width)/2 - rectWidth/2
-		rectY := float64(y) - rectHeight/2
-
-		if room.highlight {
-			// First draw background with move quality color
-			dc.Push()
-			switch room.moveQuality {
-			case BrilliantMove:
-				dc.SetRGBA(float64(brilliantMoveColor.R)/255,
-					float64(brilliantMoveColor.G)/255,
-					float64(brilliantMoveColor.B)/255,
-					float64(brilliantMoveColor.A)/255)
-			case GreatMove:
-				dc.SetRGBA(float64(greatMoveColor.R)/255,
-					float64(greatMoveColor.G)/255,
-					float64(greatMoveColor.B)/255,
-					float64(greatMoveColor.A)/255)
-			default: // BestMove
-				dc.SetRGBA(float64(bestMoveColor.R)/255,
-					float64(bestMoveColor.G)/255,
-					float64(bestMoveColor.B)/255,
-					float64(bestMoveColor.A)/255)
-			}
-			dc.DrawRoundedRectangle(rectX, rectY, rectWidth, rectHeight, 10)
-			dc.Fill()
-			dc.Pop()
-
-			// Draw icon based on move quality
-			switch room.moveQuality {
-			case BrilliantMove:
-				if img, err := gg.LoadImage("images/brilliant.png"); err == nil {
-					iconSize := rectHeight
-					imgHeight := float64(img.Bounds().Dy())
-					scale := iconSize / imgHeight
-
-					dc.Push()
-					dc.Translate(float64(int(rectX-25)), float64(y))
-					dc.Scale(scale, scale)
-					dc.DrawImageAnchored(img, 0, 0, 0.5, 0.5)
-					dc.Pop()
-				}
-			case GreatMove:
-				if img, err := gg.LoadImage("images/great.png"); err == nil {
-					iconSize := rectHeight
-					imgHeight := float64(img.Bounds().Dy())
-					scale := iconSize / imgHeight
-
-					dc.Push()
-					dc.Translate(float64(int(rectX-25)), float64(y))
-					dc.Scale(scale, scale)
-					dc.DrawImageAnchored(img, 0, 0, 0.5, 0.5)
-					dc.Pop()
-				}
-			default: // BestMove
-				if img, err := gg.LoadImage("images/best.png"); err == nil {
-					iconSize := rectHeight
-					imgHeight := float64(img.Bounds().Dy())
-					scale := iconSize / imgHeight
-
-					dc.Push()
-					dc.Translate(float64(int(rectX-25)), float64(y))
-					dc.Scale(scale, scale)
-					dc.DrawImageAnchored(img, 0, 0, 0.5, 0.5)
-					dc.Pop()
-				}
-			}
-
-			// Draw text in white
-			dc.SetColor(color.White)
-			displayText := fmt.Sprintf("%s (%s)", room.text, room.checkpoint)
-			dc.DrawStringAnchored(displayText, float64(width)/2, float64(y), 0.5, 0.5)
-
-			dc.SetColor(color.RGBA{255, 255, 200, 255})
-			dc.DrawStringAnchored(room.pacelock,
-				rectX+rectWidth+20,
-				float64(y),
-				0, 0.5)
-		} else {
-			dc.Push()
-			dc.SetRGBA(0, 0, 0, 0.5)
-			dc.DrawRoundedRectangle(rectX, rectY, rectWidth, rectHeight, 10)
-			dc.Fill()
-			dc.Pop()
-
-			dc.SetColor(color.White)
-			dc.DrawStringAnchored(room.text, float64(width)/2, float64(y), 0.5, 0.5)
-		}
-
-		y += 40
-	}
-	y += 20
-
-	timeTexts := []struct {
-		prefix string
-		time   string
-	}{
-		{"Boost time: ", formatTime(res.boostTime)},
-		{"Boostless time: ", formatTime(res.boostlessTime)},
-	}
-
-	var maxPrefixWidth, maxTimeWidth float64
-	for _, tt := range timeTexts {
-		prefixWidth, _ := dc.MeasureString(tt.prefix)
-		timeWidth, _ := dc.MeasureString(tt.time)
-		if prefixWidth > maxPrefixWidth {
-			maxPrefixWidth = prefixWidth
-		}
-		if timeWidth > maxTimeWidth {
-			maxTimeWidth = timeWidth
-		}
-	}
-
-	totalWidth := maxPrefixWidth + maxTimeWidth
-	startX := float64(width)/2 - totalWidth/2
-
-	dc.SetColor(color.White)
-	for _, tt := range timeTexts {
-		dc.DrawString(tt.prefix, startX, float64(y))
-		dc.DrawString(tt.time, startX+maxPrefixWidth, float64(y))
-		y += 30
-	}
-
-	var buf bytes.Buffer
-	dc.EncodePNG(&buf)
-	return buf, nil
-}
-
-func formatTime(seconds float64) string {
-	decimal := seconds - float64(int(seconds))
-	if decimal != 0.0 && decimal != 0.5 {
-		if decimal < 0.5 {
-			seconds = float64(int(seconds)) + 0.5
-		} else {
-			seconds = float64(int(seconds)) + 1.0
-		}
-	}
-
-	minutes := int(seconds) / 60
-	remainingSeconds := seconds - float64(minutes*60)
-
-	if minutes > 0 {
-		return fmt.Sprintf("%d:%04.1f", minutes, remainingSeconds)
-	}
-	return fmt.Sprintf("%.1f", remainingSeconds)
+	return calcSeedInternal(roomList)
 }
