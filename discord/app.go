@@ -333,50 +333,31 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		timer.Reset(15 * time.Second)
 	}
 
-	// Store original results before filtering
-	originalResults := state.Results
-
 	switch i.MessageComponentData().CustomID {
 	case ButtonPrevious:
 		if state.Index > 0 {
 			state.Index--
 		}
 	case ButtonNext:
-		if state.Index < len(state.Results)-1 {
+		if state.Index < len(getFilteredResults(state))-1 {
 			state.Index++
 		}
 	case ButtonTwoBoost, ButtonThreeBoost, ButtonAnyBoost:
 		state.Filter = i.MessageComponentData().CustomID
 		state.Index = 0
-
-		// Filter results based on boost count
-		filteredResults := make([]calc.CalcSeedResult, 0)
-		for _, result := range originalResults { // Use originalResults here
-			boostCount := len(result.BoostRooms)
-			switch state.Filter {
-			case ButtonTwoBoost:
-				if boostCount == 2 {
-					filteredResults = append(filteredResults, result)
-				}
-			case ButtonThreeBoost:
-				if boostCount == 3 {
-					filteredResults = append(filteredResults, result)
-				}
-			case ButtonAnyBoost:
-				filteredResults = append(filteredResults, result)
-			}
-		}
-		state.Results = filteredResults
 	}
 
+	// Get filtered results
+	filteredResults := getFilteredResults(state)
+
 	// Make sure we have results to display
-	if len(state.Results) == 0 {
+	if len(filteredResults) == 0 {
 		log.Error("No results available after filtering")
 		return
 	}
 
 	// Draw new image for the current index
-	currentResult := []calc.CalcSeedResult{state.Results[state.Index]}
+	currentResult := []calc.CalcSeedResult{filteredResults[state.Index]}
 	img, err := drawCalcResults(state.Rooms, currentResult)
 	if err != nil {
 		log.Error(err)
@@ -384,7 +365,7 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	// Create navigation buttons with updated state
-	navButtons := createNavigationButtons(state.Index, len(state.Results), state.Filter)
+	navButtons := createNavigationButtons(state.Index, len(filteredResults), state.Filter)
 
 	_, err = s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 		ID:          i.Message.ID,
@@ -406,6 +387,28 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	// Update the state in our map
 	messageStates[i.Message.ID] = state
+}
+
+func getFilteredResults(state *ResultState) []calc.CalcSeedResult {
+	if state.Filter == ButtonAnyBoost {
+		return state.Results
+	}
+
+	filteredResults := make([]calc.CalcSeedResult, 0)
+	for _, result := range state.Results {
+		boostCount := len(result.BoostRooms)
+		switch state.Filter {
+		case ButtonTwoBoost:
+			if boostCount == 2 {
+				filteredResults = append(filteredResults, result)
+			}
+		case ButtonThreeBoost:
+			if boostCount == 3 {
+				filteredResults = append(filteredResults, result)
+			}
+		}
+	}
+	return filteredResults
 }
 
 func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
