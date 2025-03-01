@@ -12,9 +12,22 @@ import (
 
 var BotCommandsChannelID = ""
 
+var ct2blrk = map[string]string{
+	"Early 3-1":   "Early 3+1",
+	"Glass Neo":   "Rng Skip",
+	"Overhead 4B": "Overhead 4b",
+}
+
 func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool) (calc.CalcSeedResult, error) {
 	if s == nil {
 		return calc.CalcSeedResult{}, fmt.Errorf("discord session is not initialized")
+	}
+
+	for i, r := range rooms {
+		blrkRoom, exists := ct2blrk[r]
+		if exists {
+			rooms[i] = blrkRoom
+		}
 	}
 
 	if BotCommandsChannelID == "" {

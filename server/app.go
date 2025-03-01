@@ -14,6 +14,7 @@ import (
 )
 
 type CalcRequest struct {
+	Ign      string   `json:"ign"`
 	Rooms    []string `json:"rooms"`
 	TimeLeft string   `json:"time_left"`
 	Lobby    string   `json:"lobby"`
@@ -43,7 +44,7 @@ func calcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := discord.ChattriggersHandle(req.Rooms, req.TimeLeft, req.Lobby, debug)
+	res, err := discord.ChattriggersHandle(req.Rooms, req.TimeLeft, req.Lobby, req.Ign, debug)
 	if err != nil {
 		log.Errorf("Error handling ChatTriggers request: %v", err)
 		resp.Error = "Failed to process the request"
