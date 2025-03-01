@@ -53,7 +53,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func StartServer() {
+func StartServer() error {
 	r := mux.NewRouter()
 
 	r.Use(RecoveryMiddleware)
@@ -67,5 +67,10 @@ func StartServer() {
 	}
 
 	log.Infof("Server starting on port %s...\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	if err := http.ListenAndServe(":"+port, r); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
 }

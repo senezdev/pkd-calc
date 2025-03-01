@@ -1,4 +1,4 @@
-package main
+package discord
 
 import (
 	"bytes"
@@ -548,11 +548,12 @@ func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 }
 
-func main() {
+func StartDiscordBot() error {
 	log.SetReportCaller(true)
 	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Infof("Logged in as %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
+
 	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		switch i.Type {
 		case discordgo.InteractionApplicationCommand:
@@ -568,7 +569,8 @@ func main() {
 
 	err := s.Open()
 	if err != nil {
-		log.Fatalf("Cannot open the session: %v", err)
+		log.Errorf("Cannot open the session: %v", err)
+		return err
 	}
 
 	log.Info("Adding commands...")
@@ -576,7 +578,8 @@ func main() {
 	for i, v := range commands {
 		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, GuildID, v)
 		if err != nil {
-			log.Fatalf("Cannot create '%v' command: %v", v.Name, err)
+			log.Errorf("Cannot create '%v' command: %v", v.Name, err)
+			return err
 		}
 		registeredCommands[i] = cmd
 	}
@@ -588,4 +591,6 @@ func main() {
 	<-stop
 
 	log.Info("Shutting down...")
+
+	return nil
 }
