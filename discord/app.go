@@ -18,6 +18,55 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func StartDiscordBot() error {
+	log.SetReportCaller(true)
+	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		log.Infof("Logged in as %v#%v", s.State.User.Username, s.State.User.Discriminator)
+	})
+
+	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		switch i.Type {
+		case discordgo.InteractionApplicationCommand:
+			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+				h(s, i)
+			}
+		case discordgo.InteractionApplicationCommandAutocomplete:
+			autocompleteHandler(s, i)
+		case discordgo.InteractionMessageComponent:
+			buttonHandler(s, i)
+		}
+	})
+
+	err := s.Open()
+	if err != nil {
+		log.Errorf("Cannot open the session: %v", err)
+		return err
+	}
+
+	logBotPermissions()
+
+	log.Info("Adding commands...")
+	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
+	for i, v := range commands {
+		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, GuildID, v)
+		if err != nil {
+			log.Errorf("Cannot create '%v' command: %v", v.Name, err)
+			return err
+		}
+		registeredCommands[i] = cmd
+	}
+
+	defer s.Close()
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	log.Info("Press Ctrl+C to exit")
+	<-stop
+
+	log.Info("Shutting down...")
+
+	return nil
+}
+
 var (
 	BotToken = ""
 	GuildID  = ""
@@ -548,49 +597,198 @@ func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 }
 
-func StartDiscordBot() error {
-	log.SetReportCaller(true)
-	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		log.Infof("Logged in as %v#%v", s.State.User.Username, s.State.User.Discriminator)
-	})
+func logBotPermissions() {
+	if s == nil || s.State == nil || s.State.User == nil {
+		log.Error("Discord session or user is not initialized, cannot check permissions")
+		return
+	}
 
-	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		switch i.Type {
-		case discordgo.InteractionApplicationCommand:
-			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-				h(s, i)
-			}
-		case discordgo.InteractionApplicationCommandAutocomplete:
-			autocompleteHandler(s, i)
-		case discordgo.InteractionMessageComponent:
-			buttonHandler(s, i)
-		}
-	})
+	log.Info("=== Checking Bot Permissions ===")
+	botID := s.State.User.ID
+	botUsername := s.State.User.Username
 
-	err := s.Open()
+	// Map to translate permission bits to readable names
+	permissionNames := map[int64]string{
+		discordgo.PermissionViewChannel:        "View Channels",
+		discordgo.PermissionSendMessages:       "Send Messages",
+		discordgo.PermissionAttachFiles:        "Attach Files",
+		discordgo.PermissionEmbedLinks:         "Embed Links",
+		discordgo.PermissionReadMessageHistory: "Read Message History",
+		discordgo.PermissionManageMessages:     "Manage Messages",
+		discordgo.PermissionMentionEveryone:    "Mention Everyone",
+		discordgo.PermissionManageChannels:     "Manage Channels",
+		discordgo.PermissionManageRoles:        "Manage Roles",
+		discordgo.PermissionKickMembers:        "Kick Members",
+		discordgo.PermissionBanMembers:         "Ban Members",
+		discordgo.PermissionAdministrator:      "Administrator",
+		// Add more as needed
+	}
+
+	// Get guilds the bot is in
+	guilds, err := s.UserGuilds(100, "", "", false)
 	if err != nil {
-		log.Errorf("Cannot open the session: %v", err)
-		return err
+		log.Errorf("Error getting guilds: %v", err)
+		return
 	}
 
-	log.Info("Adding commands...")
-	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
-	for i, v := range commands {
-		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, GuildID, v)
+	log.Infof("Bot %s#%s (ID: %s) is in %d servers",
+		botUsername, s.State.User.Discriminator, botID, len(guilds))
+
+	// For each guild
+	for _, guild := range guilds {
+		guildInfo, err := s.Guild(guild.ID)
 		if err != nil {
-			log.Errorf("Cannot create '%v' command: %v", v.Name, err)
-			return err
+			log.Errorf("Could not get details for guild %s: %v", guild.Name, err)
+			continue
 		}
-		registeredCommands[i] = cmd
+
+		log.Infof("=== Guild: %s (ID: %s) ===", guildInfo.Name, guildInfo.ID)
+
+		// Get bot's roles in this guild
+		botMember, err := s.GuildMember(guild.ID, botID)
+		if err != nil {
+			log.Errorf("Could not get bot's member info in guild %s: %v", guild.Name, err)
+			continue
+		}
+
+		log.Infof("Bot roles in this guild: %v", botMember.Roles)
+
+		// Get all roles to find bot's roles
+		roles, err := s.GuildRoles(guild.ID)
+		if err != nil {
+			log.Errorf("Could not get roles for guild %s: %v", guild.Name, err)
+			continue
+		}
+
+		// Log bot's role details
+		log.Info("Bot role details:")
+		for _, role := range roles {
+			for _, botRoleID := range botMember.Roles {
+				if role.ID == botRoleID {
+					log.Infof("  - Role: %s (ID: %s, Position: %d, Permissions: %d)",
+						role.Name, role.ID, role.Position, role.Permissions)
+
+					// Log human-readable permissions
+					var permissionsList []string
+					for bit, name := range permissionNames {
+						if role.Permissions&int64(bit) != 0 {
+							permissionsList = append(permissionsList, name)
+						}
+					}
+					log.Infof("    Permissions: %s", strings.Join(permissionsList, ", "))
+				}
+			}
+		}
+
+		// Check permissions in specific channels
+		channels, err := s.GuildChannels(guild.ID)
+		if err != nil {
+			log.Errorf("Could not get channels for guild %s: %v", guild.Name, err)
+			continue
+		}
+
+		// Filter for text channels only
+		var textChannels []*discordgo.Channel
+		for _, channel := range channels {
+			if channel.Type == discordgo.ChannelTypeGuildText {
+				textChannels = append(textChannels, channel)
+			}
+		}
+
+		log.Infof("Checking permissions in %d text channels", len(textChannels))
+
+		// Find #bot-commands channel specifically
+		var botCommandsChannel *discordgo.Channel
+		for _, channel := range textChannels {
+			if channel.Name == "bot-commands" {
+				botCommandsChannel = channel
+				break
+			}
+		}
+
+		// First check the bot-commands channel if found
+		if botCommandsChannel != nil {
+			perms, err := s.State.UserChannelPermissions(botID, botCommandsChannel.ID)
+			if err != nil {
+				log.Errorf("Error getting permissions for #bot-commands: %v", err)
+			} else {
+				log.Infof("=== #bot-commands Channel (ID: %s) ===", botCommandsChannel.ID)
+				logChannelPermissions(perms, permissionNames)
+
+				// Also store this ID for later use
+				BotCommandsChannelID = botCommandsChannel.ID
+			}
+		} else {
+			log.Warning("No #bot-commands channel found in this guild!")
+		}
+
+		// Log permissions for each channel (limit to 5 to avoid spam)
+		channelLimit := 5
+		if len(textChannels) < channelLimit {
+			channelLimit = len(textChannels)
+		}
+
+		for i := 0; i < channelLimit; i++ {
+			channel := textChannels[i]
+			// Skip if this is the bot-commands channel we already checked
+			if botCommandsChannel != nil && channel.ID == botCommandsChannel.ID {
+				continue
+			}
+
+			perms, err := s.State.UserChannelPermissions(botID, channel.ID)
+			if err != nil {
+				log.Errorf("Error getting permissions for channel %s: %v", channel.Name, err)
+				continue
+			}
+
+			log.Infof("=== Channel: %s (ID: %s) ===", channel.Name, channel.ID)
+			logChannelPermissions(perms, permissionNames)
+		}
+
+		if len(textChannels) > channelLimit {
+			log.Infof("...and %d more channels (not shown)", len(textChannels)-channelLimit)
+		}
+	}
+	log.Info("=== Permission Check Complete ===")
+}
+
+// Helper function to log channel permissions
+func logChannelPermissions(perms int64, permissionNames map[int64]string) {
+	// Check critical permissions individually
+	criticalPerms := []int64{
+		discordgo.PermissionViewChannel,
+		discordgo.PermissionSendMessages,
+		discordgo.PermissionAttachFiles,
 	}
 
-	defer s.Close()
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
-	log.Info("Press Ctrl+C to exit")
-	<-stop
+	for _, perm := range criticalPerms {
+		if perms&perm != 0 {
+			log.Infof("  ✅ Has permission: %s", permissionNames[perm])
+		} else {
+			log.Errorf("  ❌ MISSING CRITICAL PERMISSION: %s", permissionNames[perm])
+		}
+	}
 
-	log.Info("Shutting down...")
+	// Log all other permissions
+	log.Info("  Other permissions:")
+	for bit, name := range permissionNames {
+		// Skip the ones we already checked
+		if contains(criticalPerms, bit) {
+			continue
+		}
 
-	return nil
+		if perms&bit != 0 {
+			log.Infof("    ✓ %s", name)
+		}
+	}
+}
+
+// Helper function to check if a slice contains a value
+func contains(slice []int64, val int64) bool {
+	for _, item := range slice {
+		if item == val {
+			return true
+		}
+	}
+	return false
 }
