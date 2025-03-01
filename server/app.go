@@ -7,7 +7,6 @@ import (
 	"os"
 	"runtime/debug"
 
-	"pkd-bot/calc"
 	"pkd-bot/discord"
 
 	"github.com/gorilla/mux"
@@ -21,8 +20,8 @@ type CalcRequest struct {
 }
 
 type CalcResponse struct {
-	CalcResult calc.CalcSeedResult `json:"calc_result"`
-	Error      string              `json:"error,omitempty"`
+	CalcResult string `json:"calc_result,omitempty"`
+	Error      string `json:"error,omitempty"`
 }
 
 func calcHandler(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +51,7 @@ func calcHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(resp)
 		return
 	}
-	resp.CalcResult = res
+	resp.CalcResult = discord.FormatTime(res.BoostTime)
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {

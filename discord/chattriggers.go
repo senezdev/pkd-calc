@@ -46,7 +46,7 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby string, debug bool) (cal
 		}
 
 		content := fmt.Sprintf("A player has found a %s seed, %s requeues in %s",
-			formatTime(bestResult.BoostTime), lobby, timeLeft)
+			FormatTime(bestResult.BoostTime), lobby, timeLeft)
 
 		_, err = s.ChannelMessageSendComplex(BotCommandsChannelID, &discordgo.MessageSend{
 			Content: content,

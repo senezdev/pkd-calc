@@ -228,8 +228,8 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 		prefix string
 		time   string
 	}{
-		{"Boost time: ", formatTime(res.BoostTime)},
-		{"Boostless time: ", formatTime(res.BoostlessTime)},
+		{"Boost time: ", FormatTime(res.BoostTime)},
+		{"Boostless time: ", FormatTime(res.BoostlessTime)},
 	}
 
 	var maxPrefixWidth, maxTimeWidth float64
@@ -259,7 +259,7 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 	return buf, nil
 }
 
-func formatTime(seconds float64) string {
+func FormatTime(seconds float64) string {
 	decimal := seconds - float64(int(seconds))
 	if decimal != 0.0 && decimal != 0.5 {
 		if decimal < 0.5 {
