@@ -12,7 +12,7 @@ import (
 
 var BotCommandsChannelID = ""
 
-func ChattriggersHandle(rooms []string, timeLeft, lobby string) (calc.CalcSeedResult, error) {
+func ChattriggersHandle(rooms []string, timeLeft, lobby string, debug bool) (calc.CalcSeedResult, error) {
 	if s == nil {
 		return calc.CalcSeedResult{}, fmt.Errorf("discord session is not initialized")
 	}
@@ -35,7 +35,7 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby string) (calc.CalcSeedRe
 
 	bestResult := results[0]
 
-	if bestResult.BoostTime < 130 {
+	if bestResult.BoostTime < 130 && !debug {
 		img, err := drawCalcResults(rooms, []calc.CalcSeedResult{bestResult})
 		if err != nil {
 			return calc.CalcSeedResult{}, fmt.Errorf("error drawing seed results: %w", err)

@@ -34,8 +34,9 @@ func calcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var resp CalcResponse
+	debug := r.FormValue("debug") == "true"
 
+	var resp CalcResponse
 	if len(req.Rooms) != 8 {
 		resp.Error = "You didn't pass 8 rooms!"
 		w.WriteHeader(http.StatusBadRequest)
@@ -43,7 +44,7 @@ func calcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := discord.ChattriggersHandle(req.Rooms, req.TimeLeft, req.Lobby)
+	res, err := discord.ChattriggersHandle(req.Rooms, req.TimeLeft, req.Lobby, debug)
 	if err != nil {
 		log.Errorf("Error handling ChatTriggers request: %v", err)
 		resp.Error = "Failed to process the request"
