@@ -377,7 +377,7 @@ var RoomMap = map[string]room{
 				Name:      "cp 1-2",
 				Time:      12.5,
 				BoostTime: 10.0,
-				Quality:   BrilliantMove,
+				Quality:   BestMove,
 			},
 		},
 	},
