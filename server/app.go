@@ -2,9 +2,13 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"runtime/debug"
+
+	"pkd-bot/calc"
+	"pkd-bot/discord"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -17,20 +21,44 @@ type CalcRequest struct {
 }
 
 type CalcResponse struct {
-	Error string `json:"error,omitempty"`
+	CalcResult calc.CalcSeedResult `json:"calc_result"`
+	Error      string              `json:"error,omitempty"`
 }
 
 func calcHandler(w http.ResponseWriter, r *http.Request) {
 	var req CalcRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		err = fmt.Errorf("Invalid request body: %v", err)
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	var resp CalcResponse
 
+	if len(req.Rooms) != 8 {
+		resp.Error = "You didn't pass 8 rooms!"
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(resp)
+		return
+	}
+
+	res, err := discord.ChattriggersHandle(req.Rooms, req.TimeLeft, req.Lobby)
+	if err != nil {
+		log.Errorf("Error handling ChatTriggers request: %v", err)
+		resp.Error = "Failed to process the request"
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(resp)
+		return
+	}
+	resp.CalcResult = res
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Errorf("Error encoding response: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func RecoveryMiddleware(next http.Handler) http.Handler {

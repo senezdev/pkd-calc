@@ -8,6 +8,8 @@ services:
     # depends_on:
     #   postgres:
     #     condition: service_healthy
+    ports:
+      - 6969:6969
     environment:
       - DEBUG=true
     volumes:

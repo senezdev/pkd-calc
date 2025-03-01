@@ -14,9 +14,7 @@ func main() {
 		}
 	}()
 
-	go func() {
-		if err := discord.StartDiscordBot(); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	if err := discord.StartDiscordBot(); err != nil {
+		log.Fatal(err)
+	}
 }
