@@ -621,134 +621,117 @@ func logBotPermissions() {
 		discordgo.PermissionKickMembers:        "Kick Members",
 		discordgo.PermissionBanMembers:         "Ban Members",
 		discordgo.PermissionAdministrator:      "Administrator",
-		// Add more as needed
 	}
 
-	// Get guilds the bot is in
-	guilds, err := s.UserGuilds(100, "", "", false)
-	if err != nil {
-		log.Errorf("Error getting guilds: %v", err)
+	// Check if GUILD_ID is set
+	if GuildID == "" {
+		log.Error("GUILD_ID is not set in environment variables, can't check permissions")
 		return
 	}
 
-	log.Infof("Bot %s#%s (ID: %s) is in %d servers",
-		botUsername, s.State.User.Discriminator, botID, len(guilds))
+	// Get the specific guild
+	guild, err := s.Guild(GuildID)
+	if err != nil {
+		log.Errorf("Could not get details for guild ID %s: %v", GuildID, err)
+		return
+	}
 
-	// For each guild
-	for _, guild := range guilds {
-		guildInfo, err := s.Guild(guild.ID)
-		if err != nil {
-			log.Errorf("Could not get details for guild %s: %v", guild.Name, err)
-			continue
-		}
+	log.Infof("Bot %s#%s (ID: %s) checking permissions in server: %s",
+		botUsername, s.State.User.Discriminator, botID, guild.Name)
 
-		log.Infof("=== Guild: %s (ID: %s) ===", guildInfo.Name, guildInfo.ID)
+	// Get bot's roles in this guild
+	botMember, err := s.GuildMember(GuildID, botID)
+	if err != nil {
+		log.Errorf("Could not get bot's member info in guild %s: %v", guild.Name, err)
+		return
+	}
 
-		// Get bot's roles in this guild
-		botMember, err := s.GuildMember(guild.ID, botID)
-		if err != nil {
-			log.Errorf("Could not get bot's member info in guild %s: %v", guild.Name, err)
-			continue
-		}
+	// Get all roles to find bot's roles
+	roles, err := s.GuildRoles(GuildID)
+	if err != nil {
+		log.Errorf("Could not get roles for guild %s: %v", guild.Name, err)
+		return
+	}
 
-		log.Infof("Bot roles in this guild: %v", botMember.Roles)
+	// Log bot's role details
+	log.Info("Bot role details:")
+	for _, role := range roles {
+		for _, botRoleID := range botMember.Roles {
+			if role.ID == botRoleID {
+				log.Infof("  - Role: %s (ID: %s, Position: %d, Permissions: %d)",
+					role.Name, role.ID, role.Position, role.Permissions)
 
-		// Get all roles to find bot's roles
-		roles, err := s.GuildRoles(guild.ID)
-		if err != nil {
-			log.Errorf("Could not get roles for guild %s: %v", guild.Name, err)
-			continue
-		}
-
-		// Log bot's role details
-		log.Info("Bot role details:")
-		for _, role := range roles {
-			for _, botRoleID := range botMember.Roles {
-				if role.ID == botRoleID {
-					log.Infof("  - Role: %s (ID: %s, Position: %d, Permissions: %d)",
-						role.Name, role.ID, role.Position, role.Permissions)
-
-					// Log human-readable permissions
-					var permissionsList []string
-					for bit, name := range permissionNames {
-						if role.Permissions&int64(bit) != 0 {
-							permissionsList = append(permissionsList, name)
-						}
+				// Log human-readable permissions
+				var permissionsList []string
+				for bit, name := range permissionNames {
+					if role.Permissions&int64(bit) != 0 {
+						permissionsList = append(permissionsList, name)
 					}
-					log.Infof("    Permissions: %s", strings.Join(permissionsList, ", "))
 				}
+				log.Infof("    Permissions: %s", strings.Join(permissionsList, ", "))
 			}
-		}
-
-		// Check permissions in specific channels
-		channels, err := s.GuildChannels(guild.ID)
-		if err != nil {
-			log.Errorf("Could not get channels for guild %s: %v", guild.Name, err)
-			continue
-		}
-
-		// Filter for text channels only
-		var textChannels []*discordgo.Channel
-		for _, channel := range channels {
-			if channel.Type == discordgo.ChannelTypeGuildText {
-				textChannels = append(textChannels, channel)
-			}
-		}
-
-		log.Infof("Checking permissions in %d text channels", len(textChannels))
-
-		// Find #bot-commands channel specifically
-		var botCommandsChannel *discordgo.Channel
-		for _, channel := range textChannels {
-			if channel.Name == "bot-commands" {
-				botCommandsChannel = channel
-				break
-			}
-		}
-
-		// First check the bot-commands channel if found
-		if botCommandsChannel != nil {
-			perms, err := s.State.UserChannelPermissions(botID, botCommandsChannel.ID)
-			if err != nil {
-				log.Errorf("Error getting permissions for #bot-commands: %v", err)
-			} else {
-				log.Infof("=== #bot-commands Channel (ID: %s) ===", botCommandsChannel.ID)
-				logChannelPermissions(perms, permissionNames)
-
-				// Also store this ID for later use
-				BotCommandsChannelID = botCommandsChannel.ID
-			}
-		} else {
-			log.Warning("No #bot-commands channel found in this guild!")
-		}
-
-		// Log permissions for each channel (limit to 5 to avoid spam)
-		channelLimit := 5
-		if len(textChannels) < channelLimit {
-			channelLimit = len(textChannels)
-		}
-
-		for i := 0; i < channelLimit; i++ {
-			channel := textChannels[i]
-			// Skip if this is the bot-commands channel we already checked
-			if botCommandsChannel != nil && channel.ID == botCommandsChannel.ID {
-				continue
-			}
-
-			perms, err := s.State.UserChannelPermissions(botID, channel.ID)
-			if err != nil {
-				log.Errorf("Error getting permissions for channel %s: %v", channel.Name, err)
-				continue
-			}
-
-			log.Infof("=== Channel: %s (ID: %s) ===", channel.Name, channel.ID)
-			logChannelPermissions(perms, permissionNames)
-		}
-
-		if len(textChannels) > channelLimit {
-			log.Infof("...and %d more channels (not shown)", len(textChannels)-channelLimit)
 		}
 	}
+
+	// Check permissions in specific channels
+	channels, err := s.GuildChannels(GuildID)
+	if err != nil {
+		log.Errorf("Could not get channels for guild %s: %v", guild.Name, err)
+		return
+	}
+
+	// Filter for text channels only
+	var textChannels []*discordgo.Channel
+	for _, channel := range channels {
+		if channel.Type == discordgo.ChannelTypeGuildText {
+			textChannels = append(textChannels, channel)
+		}
+	}
+
+	log.Infof("Checking permissions in %d text channels", len(textChannels))
+
+	// Find #bot-commands channel specifically
+	var botCommandsChannel *discordgo.Channel
+	for _, channel := range textChannels {
+		if channel.Name == "bot-commands" {
+			botCommandsChannel = channel
+			break
+		}
+	}
+
+	// First check the bot-commands channel if found
+	if botCommandsChannel != nil {
+		perms, err := s.State.UserChannelPermissions(botID, botCommandsChannel.ID)
+		if err != nil {
+			log.Errorf("Error getting permissions for #bot-commands: %v", err)
+		} else {
+			log.Infof("=== #bot-commands Channel (ID: %s) ===", botCommandsChannel.ID)
+			logChannelPermissions(perms, permissionNames)
+
+			// Also store this ID for later use
+			BotCommandsChannelID = botCommandsChannel.ID
+		}
+	} else {
+		log.Warning("No #bot-commands channel found in this guild!")
+	}
+
+	// Log permissions for all text channels
+	for _, channel := range textChannels {
+		// Skip if this is the bot-commands channel we already checked
+		if botCommandsChannel != nil && channel.ID == botCommandsChannel.ID {
+			continue
+		}
+
+		perms, err := s.State.UserChannelPermissions(botID, channel.ID)
+		if err != nil {
+			log.Errorf("Error getting permissions for channel %s: %v", channel.Name, err)
+			continue
+		}
+
+		log.Infof("=== Channel: %s (ID: %s) ===", channel.Name, channel.ID)
+		logChannelPermissions(perms, permissionNames)
+	}
+
 	log.Info("=== Permission Check Complete ===")
 }
 
