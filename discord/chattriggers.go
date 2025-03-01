@@ -12,7 +12,7 @@ import (
 
 var BotCommandsChannelID = ""
 
-func ChattriggersHandle(rooms []string, timeLeft, lobby string, debug bool) (calc.CalcSeedResult, error) {
+func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool) (calc.CalcSeedResult, error) {
 	if s == nil {
 		return calc.CalcSeedResult{}, fmt.Errorf("discord session is not initialized")
 	}
@@ -45,8 +45,8 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby string, debug bool) (cal
 			return calc.CalcSeedResult{}, fmt.Errorf("error drawing seed results: %w", err)
 		}
 
-		content := fmt.Sprintf("A player has found a %s seed, %s requeues in %s",
-			FormatTime(bestResult.BoostTime), lobby, timeLeft)
+		content := fmt.Sprintf("%s has found a %s seed, %s requeues in %s",
+			ign, FormatTime(bestResult.BoostTime), lobby, timeLeft)
 
 		_, err = s.ChannelMessageSendComplex(BotCommandsChannelID, &discordgo.MessageSend{
 			Content: content,
@@ -71,7 +71,6 @@ func GetChannelIDByName(channelName string) string {
 		return ""
 	}
 
-	// If GuildID is empty, we need to search through all available guilds
 	if GuildID == "" {
 		guilds, err := s.UserGuilds(100, "", "", false)
 		if err != nil {
