@@ -24,6 +24,10 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby string, debug bool) (cal
 		}
 	}
 
+	if err := checkBotPermissions(BotCommandsChannelID); err != nil {
+		return calc.CalcSeedResult{}, fmt.Errorf("permission error: %w", err)
+	}
+
 	results, err := calc.CalcSeed(rooms)
 	if err != nil {
 		return calc.CalcSeedResult{}, fmt.Errorf("error calculating seed: %w", err)
@@ -104,4 +108,39 @@ func GetChannelIDByName(channelName string) string {
 
 	log.Errorf("Channel '%s' not found", channelName)
 	return ""
+}
+
+func checkBotPermissions(channelID string) error {
+	log.Info("checking bot permissions")
+
+	if s == nil {
+		err := fmt.Errorf("discord session is not initialized")
+		log.Error(err)
+		return err
+	}
+
+	_, err := s.Channel(channelID)
+	if err != nil {
+		err := fmt.Errorf("error getting channel info: %w", err)
+		log.Error(err)
+		return err
+	}
+
+	permissions, err := s.State.UserChannelPermissions(s.State.User.ID, channelID)
+	if err != nil {
+		err := fmt.Errorf("error getting permissions: %w", err)
+		log.Error(err)
+		return err
+	}
+
+	requiredPerms := discordgo.PermissionViewChannel |
+		discordgo.PermissionSendMessages |
+		discordgo.PermissionAttachFiles
+
+	if permissions&int64(requiredPerms) != int64(requiredPerms) {
+		return fmt.Errorf("bot lacks necessary permissions for channel %s. Has: %d, Needs: %d",
+			channelID, permissions, requiredPerms)
+	}
+
+	return nil
 }
