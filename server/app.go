@@ -21,7 +21,7 @@ type CalcRequest struct {
 }
 
 type CalcResponse struct {
-	CalcResult string `json:"calc_result,omitempty"`
+	CalcResult string `json:"time,omitempty"`
 	Error      string `json:"error,omitempty"`
 }
 
