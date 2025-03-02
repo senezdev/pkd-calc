@@ -34,6 +34,8 @@ func calcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Infof("received body: %+v", req)
+
 	debug := r.FormValue("debug") == "true"
 
 	var resp CalcResponse
