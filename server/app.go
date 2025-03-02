@@ -21,8 +21,9 @@ type CalcRequest struct {
 }
 
 type CalcResponse struct {
-	CalcResult string `json:"time,omitempty"`
-	Error      string `json:"error,omitempty"`
+	BoostTime     string `json:"boost_time,omitempty"`
+	BoostlessTime string `json:"boostless_time,omitempty"`
+	Error         string `json:"error,omitempty"`
 }
 
 func calcHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +55,8 @@ func calcHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(resp)
 		return
 	}
-	resp.CalcResult = discord.FormatTime(res.BoostTime)
+	resp.BoostTime = discord.FormatTime(res.BoostTime)
+	resp.BoostlessTime = discord.FormatTime(res.BoostlessTime)
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
