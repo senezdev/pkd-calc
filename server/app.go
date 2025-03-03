@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+	"strings"
 
 	"pkd-bot/discord"
 
@@ -45,6 +46,10 @@ func calcHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(resp)
 		return
+	}
+
+	for i, r := range req.Rooms {
+		req.Rooms[i] = strings.ToLower(r)
 	}
 
 	res, err := discord.ChattriggersHandle(req.Rooms, req.TimeLeft, req.Lobby, req.Ign, debug)
