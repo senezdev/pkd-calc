@@ -30,7 +30,7 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 			rooms[i] = blrkRoom
 		}
 
-		rooms[i] = strings.ToLower(r)
+		rooms[i] = strings.ToLower(rooms[i])
 	}
 
 	if BotCommandsChannelID == "" {
