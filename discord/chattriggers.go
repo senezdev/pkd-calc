@@ -3,6 +3,7 @@ package discord
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"pkd-bot/calc"
 
@@ -28,6 +29,8 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 		if exists {
 			rooms[i] = blrkRoom
 		}
+
+		rooms[i] = strings.ToLower(r)
 	}
 
 	if BotCommandsChannelID == "" {
