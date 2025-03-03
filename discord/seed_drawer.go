@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"math"
 	"os"
+	"strings"
 
 	"pkd-bot/calc"
 
@@ -95,8 +96,14 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 
 	roomsOutput := make([]RoomInfo, 0, 9)
 	for i := 0; i < 9; i++ {
+		words := strings.Split(roomList[i], " ")
+		for j := range words {
+			if len(words[j]) > 0 {
+				words[j] = strings.ToUpper(string(words[j][0])) + words[j][1:]
+			}
+		}
 		roomsOutput = append(roomsOutput, RoomInfo{
-			text: roomList[i],
+			text: strings.Join(words, " "),
 		})
 	}
 

@@ -5,6 +5,7 @@ import (
 	"image/color"
 	_ "image/png"
 	"slices"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -37,7 +38,7 @@ type room struct {
 }
 
 var RoomMap = map[string]room{
-	"Around Pillars": {
+	"around pillars": {
 		Name:          "Around Pillars",
 		BoostlessTime: 17.25,
 		BoostStrats: []boostRoom{
@@ -55,7 +56,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Blocks": {
+	"blocks": {
 		Name:          "Blocks",
 		BoostlessTime: 22.25,
 		BoostStrats: []boostRoom{
@@ -73,7 +74,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Castle Wall": {
+	"castle wall": {
 		Name:          "Castle Wall",
 		BoostlessTime: 16.0,
 		BoostStrats: []boostRoom{
@@ -85,7 +86,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Tightrope": {
+	"tightrope": {
 		Name:          "Tightrope",
 		BoostlessTime: 27.75,
 		BoostStrats: []boostRoom{
@@ -103,7 +104,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Early 3+1": {
+	"early 3+1": {
 		Name:          "Early 3+1",
 		BoostlessTime: 25.25,
 		BoostStrats: []boostRoom{
@@ -121,7 +122,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Fence Squeeze": {
+	"fence squeeze": {
 		Name:          "Fence Squeeze",
 		BoostlessTime: 19.75,
 		BoostStrats: []boostRoom{
@@ -139,7 +140,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Fences": {
+	"fences": {
 		Name:          "Fences",
 		BoostlessTime: 13.5,
 		BoostStrats: []boostRoom{
@@ -157,7 +158,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Fortress": {
+	"fortress": {
 		Name:          "Fortress",
 		BoostlessTime: 15.25,
 		BoostStrats: []boostRoom{
@@ -175,7 +176,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Four Towers": {
+	"four towers": {
 		Name:          "Four Towers",
 		BoostlessTime: 23.75,
 		BoostStrats: []boostRoom{
@@ -199,7 +200,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Ice": {
+	"ice": {
 		Name:          "Ice",
 		BoostlessTime: 17.0,
 		BoostStrats: []boostRoom{
@@ -223,7 +224,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Ladder Slide": {
+	"ladder slide": {
 		Name:          "Ladder Slide",
 		BoostlessTime: 22.75,
 		BoostStrats: []boostRoom{
@@ -241,7 +242,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Ladder Tower": {
+	"ladder tower": {
 		Name:          "Ladder Tower",
 		BoostlessTime: 25.25,
 		BoostStrats: []boostRoom{
@@ -259,7 +260,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Overhead 4b": {
+	"overhead 4b": {
 		Name:          "Overhead 4b",
 		BoostlessTime: 23.75,
 		BoostStrats: []boostRoom{
@@ -284,7 +285,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Quartz Climb": {
+	"quartz climb": {
 		Name:          "Quartz Climb",
 		BoostlessTime: 19.75,
 		BoostStrats: []boostRoom{
@@ -302,7 +303,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Quartz Temple": {
+	"quartz temple": {
 		Name:          "Quartz Temple",
 		BoostlessTime: 16.25,
 		BoostStrats: []boostRoom{
@@ -320,7 +321,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Rng Skip": {
+	"rng skip": {
 		Name:          "Rng Skip",
 		BoostlessTime: 12.0,
 		BoostStrats: []boostRoom{
@@ -338,7 +339,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Sandpit": {
+	"sandpit": {
 		// 13.5 15.5
 		Name:          "Sandpit",
 		BoostlessTime: 34.75,
@@ -363,7 +364,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Scatter": {
+	"scatter": {
 		Name:          "Scatter",
 		BoostlessTime: 18.75,
 		BoostStrats: []boostRoom{
@@ -381,7 +382,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Slime Scatter": {
+	"slime scatter": {
 		Name:          "Slime Scatter",
 		BoostlessTime: 20.75,
 		BoostStrats: []boostRoom{
@@ -399,7 +400,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Slime Skip": {
+	"slime skip": {
 		Name:          "Slime Skip",
 		BoostlessTime: 15.75,
 		BoostStrats: []boostRoom{
@@ -417,7 +418,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Tower Tightrope": {
+	"tower tightrope": {
 		Name:          "Tower Tightrope",
 		BoostlessTime: 22.75,
 		BoostStrats: []boostRoom{
@@ -435,7 +436,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Triple Platform": {
+	"triple platform": {
 		Name:          "Triple Platform",
 		BoostlessTime: 18.75,
 		BoostStrats: []boostRoom{
@@ -453,7 +454,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Triple Trapdoors": {
+	"triple trapdoors": {
 		Name:          "Triple Trapdoors",
 		BoostlessTime: 17.75,
 		BoostStrats: []boostRoom{
@@ -472,7 +473,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Underbridge": {
+	"underbridge": {
 		Name:          "Underbridge",
 		BoostlessTime: 23.75,
 		BoostStrats: []boostRoom{
@@ -490,7 +491,7 @@ var RoomMap = map[string]room{
 			},
 		},
 	},
-	"Finish Room": {
+	"finish room": {
 		Name:          "Finish Room",
 		BoostlessTime: 4.5,
 		BoostStrats: []boostRoom{
@@ -512,7 +513,7 @@ func GetRooms() []string {
 			continue
 		}
 
-		res[i] = v.Name
+		res[i] = strings.ToLower(v.Name)
 		i++
 	}
 
@@ -733,6 +734,6 @@ func calcSeedInternal(roomList []string) ([]CalcSeedResult, error) {
 }
 
 func CalcSeed(roomList []string) ([]CalcSeedResult, error) {
-	roomList = append(roomList, "Finish Room")
+	roomList = append(roomList, "finish room")
 	return calcSeedInternal(roomList)
 }

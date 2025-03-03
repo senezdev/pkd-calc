@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"strings"
 	"time"
 
@@ -19,6 +20,8 @@ import (
 )
 
 func StartDiscordBot() error {
+	slices.Sort(options)
+
 	log.SetReportCaller(true)
 	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Infof("Logged in as %v#%v", s.State.User.Username, s.State.User.Discriminator)
@@ -460,6 +463,178 @@ func getFilteredResults(state *ResultState) []calc.CalcSeedResult {
 	return filteredResults
 }
 
+func validateInput(input []string) (bool, error) {
+	log.Info(options)
+
+	if len(input) != 8 {
+		err := fmt.Errorf("Was expecting 8 rooms, got %d", len(input))
+		log.Error(err)
+		return false, err
+	}
+
+	correctedInput := make([]string, len(input))
+	copy(correctedInput, input)
+
+	for i, roomName := range input {
+		if slices.Contains(options, roomName) {
+			continue
+		}
+
+		bestMatch, score := fuzzyMatch(roomName, options)
+
+		if score >= 0.6 {
+			log.Infof("Autocorrected '%s' to '%s' (score: %.2f)", roomName, bestMatch, score)
+			correctedInput[i] = bestMatch
+		} else {
+			err := fmt.Errorf("I don't know a room called \"%s\". Did you mean \"%s\"?", roomName, bestMatch)
+			log.Error(err)
+			return false, err
+		}
+	}
+
+	copy(input, correctedInput)
+	return true, nil
+}
+
+func fuzzyMatch(input string, options []string) (string, float64) {
+	input = strings.ToLower(input)
+	bestMatch := ""
+	bestScore := 0.0
+
+	for _, option := range options {
+		// Calculate match score
+		score := calculateSimilarity(input, option)
+
+		// Also check if the input is a prefix or substring
+		optionLower := strings.ToLower(option)
+		if strings.HasPrefix(optionLower, input) {
+			// Prefix matches get a bonus
+			score += 0.2
+		} else if strings.Contains(optionLower, input) {
+			// Substring matches get a smaller bonus
+			score += 0.1
+		}
+
+		// Words appearing in the same order bonus
+		inputWords := strings.Fields(input)
+		if len(inputWords) > 1 {
+			allWordsFound := true
+			lastIndex := -1
+
+			for _, word := range inputWords {
+				idx := strings.Index(optionLower, word)
+				if idx == -1 || idx <= lastIndex {
+					allWordsFound = false
+					break
+				}
+				lastIndex = idx
+			}
+
+			if allWordsFound {
+				score += 0.15
+			}
+		}
+
+		// Cap at 1.0
+		if score > 1.0 {
+			score = 1.0
+		}
+
+		if score > bestScore {
+			bestScore = score
+			bestMatch = option
+		}
+	}
+
+	return bestMatch, bestScore
+}
+
+// calculateSimilarity computes a similarity score between two strings
+// using a combination of Levenshtein distance and other heuristics
+func calculateSimilarity(a, b string) float64 {
+	a = strings.ToLower(a)
+	b = strings.ToLower(b)
+
+	// If strings are identical, return perfect score
+	if a == b {
+		return 1.0
+	}
+
+	// Handle acronyms - if input might be an acronym of the target
+	// For example "tp" might match "triple platform"
+	if isAcronymOf(a, b) {
+		return 0.8
+	}
+
+	// Calculate Levenshtein distance
+	distance := levenshteinDistance(a, b)
+	maxLen := float64(max(len(a), len(b)))
+
+	// Convert distance to similarity score (0 to 1)
+	return 1.0 - float64(distance)/maxLen
+}
+
+// isAcronymOf checks if a might be an acronym of b
+func isAcronymOf(potentialAcronym, fullText string) bool {
+	if len(potentialAcronym) <= 1 {
+		return false
+	}
+
+	words := strings.Fields(fullText)
+	if len(potentialAcronym) != len(words) {
+		return false
+	}
+
+	for i, char := range potentialAcronym {
+		if i >= len(words) {
+			return false
+		}
+
+		if len(words[i]) == 0 || !strings.HasPrefix(strings.ToLower(words[i]), string(char)) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// levenshteinDistance calculates the Levenshtein distance between two strings
+func levenshteinDistance(a, b string) int {
+	if len(a) == 0 {
+		return len(b)
+	}
+	if len(b) == 0 {
+		return len(a)
+	}
+
+	// Create a matrix
+	matrix := make([][]int, len(a)+1)
+	for i := range matrix {
+		matrix[i] = make([]int, len(b)+1)
+		matrix[i][0] = i
+	}
+	for j := range matrix[0] {
+		matrix[0][j] = j
+	}
+
+	// Fill the matrix
+	for i := 1; i <= len(a); i++ {
+		for j := 1; j <= len(b); j++ {
+			cost := 1
+			if a[i-1] == b[j-1] {
+				cost = 0
+			}
+			matrix[i][j] = min(
+				matrix[i-1][j]+1,      // deletion
+				matrix[i][j-1]+1,      // insertion
+				matrix[i-1][j-1]+cost, // substitution
+			)
+		}
+	}
+
+	return matrix[len(a)][len(b)]
+}
+
 func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -478,6 +653,19 @@ func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	for _, option := range data.Options {
 		selected = append(selected, option.StringValue())
+	}
+
+	valid, err := validateInput(selected)
+	if !valid {
+		log.Error(err)
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: err.Error(),
+			},
+		})
+
+		return
 	}
 
 	res, err := calc.CalcSeed(selected)
