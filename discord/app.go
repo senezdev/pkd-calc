@@ -239,6 +239,7 @@ const (
 	ButtonTwoBoost   = "two_boost"
 	ButtonThreeBoost = "three_boost"
 	ButtonAnyBoost   = "any_boost"
+	ButtonShowCalc   = "show_calculation"
 )
 
 func createNavigationButtons(currentIndex, totalResults int, currentFilter string) []discordgo.MessageComponent {
@@ -294,6 +295,15 @@ func createNavigationButtons(currentIndex, totalResults int, currentFilter strin
 						}
 						return discordgo.SecondaryButton
 					}(),
+				},
+			},
+		},
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					CustomID: ButtonShowCalc,
+					Label:    "How did you get this?",
+					Style:    discordgo.SuccessButton,
 				},
 			},
 		},
@@ -397,6 +407,33 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		timer.Reset(15 * time.Second)
 	}
 
+	if i.MessageComponentData().CustomID == ButtonShowCalc {
+		// err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		// 	Type: discordgo.InteractionResponseDeferredMessageUpdate,
+		// })
+		// if err != nil {
+		// 	log.Errorf("Failed to acknowledge interaction: %v", err)
+		// 	return
+		// }
+
+		// Create detailed calculation message
+		detailedCalc := formatDetailedCalculation(state.Rooms, getFilteredResults(state)[state.Index])
+
+		// Send a new message instead of responding to the interaction
+		_, err = s.ChannelMessageSend(i.ChannelID, detailedCalc)
+		if err != nil {
+			log.Errorf("Failed to send calculation details: %v", err)
+		}
+
+		// Edit the original interaction response to confirm
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{})
+		if err != nil {
+			log.Errorf("Failed to edit interaction response: %v", err)
+		}
+
+		return
+	}
+
 	switch i.MessageComponentData().CustomID {
 	case ButtonPrevious:
 		if state.Index > 0 {
@@ -451,6 +488,85 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	// Update the state in our map
 	messageStates[i.Message.ID] = state
+}
+
+func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) string {
+	rooms = append(rooms, "finish room")
+	// Create formatted strings for both boost and boostless times
+	boostCalc := "Boost time calculation:\n```\n"
+	boostlessCalc := "Boostless time calculation:\n```\n"
+
+	// Track room times for both calculations
+	boostTimeSum := 0.0
+	boostlessTimeSum := 0.0
+
+	// Make a map of boost rooms for quick lookup
+	boostRooms := make(map[int]calc.CalcResultBoost)
+	for _, br := range result.BoostRooms {
+		boostRooms[br.Ind] = br
+	}
+
+	// Process each room
+	for i, room := range rooms {
+		roomInfo := calc.RoomMap[room]
+
+		// For boostless calculation
+		boostlessTime := roomInfo.BoostlessTime
+		boostlessTimeSum += boostlessTime
+		boostlessCalc += fmt.Sprintf("%.2f", boostlessTime)
+
+		// Check if we need a + sign
+		if i < len(rooms)-1 {
+			boostlessCalc += " + "
+		}
+
+		// For boost calculation
+		if boost, isBoost := boostRooms[i]; isBoost {
+			// This is a boost room
+			boostTime := roomInfo.BoostStrats[boost.StratInd].Time
+			boostTimeSum += boostTime
+
+			boostCalc += fmt.Sprintf("%.2f",
+				boostTime)
+
+			// Add pacelock if present
+			if boost.Pacelock > 0 {
+				boostCalc += fmt.Sprintf(" + %.2f (pacelock)", boost.Pacelock)
+				boostTimeSum += boost.Pacelock
+			}
+		} else {
+			// Not a boost room, use boostless time
+			boostTime := roomInfo.BoostlessTime
+			boostTimeSum += boostTime
+			boostCalc += fmt.Sprintf("%.2f", boostTime)
+		}
+
+		// Check if we need a + sign
+		if i < len(rooms)-1 {
+			boostCalc += " + "
+		}
+	}
+
+	// Add the sums
+	minutes := int(boostTimeSum) / 60
+	seconds := boostTimeSum - float64(minutes*60)
+	if minutes > 0 {
+		boostCalc += fmt.Sprintf(" = %.2f = %d:%.2f", boostTimeSum, minutes, seconds)
+	} else {
+		boostCalc += fmt.Sprintf(" = %.2f", boostTimeSum)
+	}
+	boostCalc += "\n```\n"
+
+	minutes = int(boostlessTimeSum) / 60
+	seconds = boostlessTimeSum - float64(minutes*60)
+	if minutes > 0 {
+		boostlessCalc += fmt.Sprintf(" = %.2f = %d:%.2f", boostlessTimeSum, minutes, seconds)
+	} else {
+		boostlessCalc += fmt.Sprintf(" = %.2f", boostlessTimeSum)
+	}
+	boostlessCalc += "\n```"
+
+	return boostCalc + boostlessCalc
 }
 
 func getFilteredResults(state *ResultState) []calc.CalcSeedResult {
