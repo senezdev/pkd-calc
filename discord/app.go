@@ -359,6 +359,18 @@ func cleanupMessageState(messageID string, s *discordgo.Session, channelID strin
 }
 
 func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Errorf("application panicked while handling a request: %v", err)
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "HA. Buttons not working.",
+				},
+			})
+		}
+	}()
+
 	state, exists := messageStates[i.Message.ID]
 	if !exists {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
