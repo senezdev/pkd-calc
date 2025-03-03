@@ -601,7 +601,7 @@ func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) strin
 	minutes := int(boostTimeSum) / 60
 	seconds := boostTimeSum - float64(minutes*60)
 	if minutes > 0 {
-		boostCalc += fmt.Sprintf(" = %.2f = %d:%.2f", boostTimeSum, minutes, seconds)
+		boostCalc += fmt.Sprintf(" = %.2f = %s", boostTimeSum, FormatTime(boostTimeSum))
 	} else {
 		boostCalc += fmt.Sprintf(" = %.2f", boostTimeSum)
 	}
@@ -610,7 +610,7 @@ func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) strin
 	minutes = int(boostlessTimeSum) / 60
 	seconds = boostlessTimeSum - float64(minutes*60)
 	if minutes > 0 {
-		boostlessCalc += fmt.Sprintf(" = %.2f = %d:%.2f", boostlessTimeSum, minutes, seconds)
+		boostlessCalc += fmt.Sprintf(" = %.2f = %s", boostlessTimeSum, FormatTime(boostlessTimeSum))
 	} else {
 		boostlessCalc += fmt.Sprintf(" = %.2f", boostlessTimeSum)
 	}
