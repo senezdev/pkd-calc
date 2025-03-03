@@ -21,9 +21,10 @@ type CalcRequest struct {
 }
 
 type CalcResponse struct {
-	BoostTime     string `json:"boost_time,omitempty"`
-	BoostlessTime string `json:"boostless_time,omitempty"`
-	Error         string `json:"error,omitempty"`
+	BoostTime     string                       `json:"boost_time,omitempty"`
+	BoostRooms    []discord.BoostRoomsResponse `json:"boost_rooms,omitempty"`
+	BoostlessTime string                       `json:"boostless_time,omitempty"`
+	Error         string                       `json:"error,omitempty"`
 }
 
 func calcHandler(w http.ResponseWriter, r *http.Request) {
@@ -47,11 +48,7 @@ func calcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// for i, r := range req.Rooms {
-	// 	req.Rooms[i] = strings.ToLower(r)
-	// }
-
-	res, err := discord.ChattriggersHandle(req.Rooms, req.TimeLeft, req.Lobby, req.Ign, debug)
+	res, resBoostRooms, err := discord.ChattriggersHandle(req.Rooms, req.TimeLeft, req.Lobby, req.Ign, debug)
 	if err != nil {
 		log.Errorf("Error handling ChatTriggers request: %v", err)
 		resp.Error = "Failed to process the request"
@@ -61,6 +58,7 @@ func calcHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resp.BoostTime = discord.FormatTime(res.BoostTime)
 	resp.BoostlessTime = discord.FormatTime(res.BoostlessTime)
+	resp.BoostRooms = resBoostRooms
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {

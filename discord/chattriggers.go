@@ -19,9 +19,15 @@ var ct2blrk = map[string]string{
 	"Overhead 4B": "Overhead 4b",
 }
 
-func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool) (calc.CalcSeedResult, error) {
+type BoostRoomsResponse struct {
+	Name     string  `json:"name"`
+	Pacelock float64 `json:"pacelock"`
+	Index    int     `json:"index"`
+}
+
+func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool) (calc.CalcSeedResult, []BoostRoomsResponse, error) {
 	if s == nil {
-		return calc.CalcSeedResult{}, fmt.Errorf("discord session is not initialized")
+		return calc.CalcSeedResult{}, nil, fmt.Errorf("discord session is not initialized")
 	}
 
 	for i, r := range rooms {
@@ -36,21 +42,21 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 	if BotCommandsChannelID == "" {
 		BotCommandsChannelID = GetChannelIDByName("bot-commands")
 		if BotCommandsChannelID == "" {
-			return calc.CalcSeedResult{}, fmt.Errorf("could not find #bot-commands channel")
+			return calc.CalcSeedResult{}, nil, fmt.Errorf("could not find #bot-commands channel")
 		}
 	}
 
 	if err := checkBotPermissions(BotCommandsChannelID); err != nil {
-		return calc.CalcSeedResult{}, fmt.Errorf("permission error: %w", err)
+		return calc.CalcSeedResult{}, nil, fmt.Errorf("permission error: %w", err)
 	}
 
 	results, err := calc.CalcSeed(rooms)
 	if err != nil {
-		return calc.CalcSeedResult{}, fmt.Errorf("error calculating seed: %w", err)
+		return calc.CalcSeedResult{}, nil, fmt.Errorf("error calculating seed: %w", err)
 	}
 
 	if len(results) == 0 {
-		return calc.CalcSeedResult{}, fmt.Errorf("no results found for the given rooms")
+		return calc.CalcSeedResult{}, nil, fmt.Errorf("no results found for the given rooms")
 	}
 
 	bestResult := results[0]
@@ -58,7 +64,7 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 	if bestResult.BoostTime < 130 && !debug {
 		img, err := drawCalcResults(rooms, []calc.CalcSeedResult{bestResult})
 		if err != nil {
-			return calc.CalcSeedResult{}, fmt.Errorf("error drawing seed results: %w", err)
+			return calc.CalcSeedResult{}, nil, fmt.Errorf("error drawing seed results: %w", err)
 		}
 
 		content := fmt.Sprintf("%s has found a %s seed, %s requeues in %s",
@@ -74,11 +80,20 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 			},
 		})
 		if err != nil {
-			return calc.CalcSeedResult{}, fmt.Errorf("error sending message to Discord: %w", err)
+			return calc.CalcSeedResult{}, nil, fmt.Errorf("error sending message to Discord: %w", err)
 		}
 	}
 
-	return bestResult, nil
+	boostRooms := make([]BoostRoomsResponse, 0)
+	for _, room := range bestResult.BoostRooms {
+		boostRooms = append(boostRooms, BoostRoomsResponse{
+			Name:     fmt.Sprintf("%s (%s)", calc.RoomMap[rooms[room.Ind]].Name, calc.RoomMap[rooms[room.Ind]].BoostStrats[room.StratInd].Name),
+			Pacelock: room.Pacelock,
+			Index:    room.Ind,
+		})
+	}
+
+	return bestResult, boostRooms, nil
 }
 
 func GetChannelIDByName(channelName string) string {
