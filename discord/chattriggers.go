@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"time"
 
 	"pkd-bot/calc"
 
@@ -24,6 +25,8 @@ type BoostRoomsResponse struct {
 	Pacelock float64 `json:"pacelock"`
 	Index    int     `json:"index"`
 }
+
+var seedCache = NewSeedCache(1 * time.Hour)
 
 func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool) (calc.CalcSeedResult, []BoostRoomsResponse, error) {
 	if s == nil {
@@ -61,7 +64,14 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 
 	bestResult := results[0]
 
-	if bestResult.BoostTime < 130 && !debug {
+	// Generate a unique key for this seed based on the room combination
+	seedKey := strings.Join(rooms, "|")
+
+	// Check if we should send a Discord message (if boost time is good and we haven't seen this seed recently)
+	if bestResult.BoostTime < 130 && !seedCache.HasSeen(seedKey) && !debug {
+		// Mark this seed as seen to prevent duplicate messages
+		seedCache.MarkSeen(seedKey)
+
 		img, err := drawCalcResults(rooms, []calc.CalcSeedResult{bestResult})
 		if err != nil {
 			return calc.CalcSeedResult{}, nil, fmt.Errorf("error drawing seed results: %w", err)
