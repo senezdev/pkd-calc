@@ -22,8 +22,8 @@ var (
 )
 
 func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (bytes.Buffer, error) {
-	if roomList[len(roomList)-1] != "Finish Room" {
-		roomList = append(roomList, "Finish Room")
+	if roomList[len(roomList)-1] != "finish room" {
+		roomList = append(roomList, "finish room")
 	}
 
 	tempDC := gg.NewContext(1, 1)
