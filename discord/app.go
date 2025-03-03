@@ -492,6 +492,16 @@ func validateInput(input []string) (bool, error) {
 		}
 	}
 
+	seen := make(map[string]bool)
+	for _, room := range correctedInput {
+		if seen[room] {
+			err := fmt.Errorf("Room '%s' appears more than once. Each room must be unique", room)
+			log.Error(err)
+			return false, err
+		}
+		seen[room] = true
+	}
+
 	copy(input, correctedInput)
 	return true, nil
 }
