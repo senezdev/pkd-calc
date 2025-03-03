@@ -321,8 +321,13 @@ var messageStates = make(map[string]*ResultState)
 
 var cleanupTimers = make(map[string]*time.Timer)
 
+var (
+	showCalcTimers     = make(map[string]*time.Timer)
+	longButtonDuration = 5 * time.Minute
+)
+
 // Modify cleanupMessageState to use a timer
-func cleanupMessageState(messageID string, s *discordgo.Session, channelID string) *time.Timer {
+func cleanupMessageState(messageID string, s *discordgo.Session, channelID string, keepShowCalcButton bool) *time.Timer {
 	return time.AfterFunc(15*time.Second, func() {
 		// Get the current message
 		message, err := s.ChannelMessage(channelID, messageID)
@@ -351,20 +356,57 @@ func cleanupMessageState(messageID string, s *discordgo.Session, channelID strin
 			return
 		}
 
-		// Keep the last image but remove buttons
+		var components []discordgo.MessageComponent
+		if keepShowCalcButton {
+			// Keep only the ShowCalc button
+			components = []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.Button{
+							CustomID: ButtonShowCalc,
+							Label:    "How did you get this?",
+							Style:    discordgo.SuccessButton,
+						},
+					},
+				},
+			}
+
+			// Create a timer to remove the ShowCalc button and state eventually
+			showCalcTimers[messageID] = time.AfterFunc(5*time.Minute, func() {
+				// Remove all buttons after the extended period
+				_, err = s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+					ID:          messageID,
+					Channel:     channelID,
+					Files:       []*discordgo.File{{Name: "result.png", Reader: bytes.NewReader(data)}},
+					Components:  &[]discordgo.MessageComponent{},
+					Attachments: &[]*discordgo.MessageAttachment{},
+				})
+				if err != nil {
+					log.Errorf("Failed to remove ShowCalc button: %v", err)
+				}
+				delete(showCalcTimers, messageID)
+				delete(messageStates, messageID) // Only delete state when fully done
+			})
+		} else {
+			components = []discordgo.MessageComponent{}
+			// If not keeping the button, remove the state now
+			delete(messageStates, messageID)
+		}
+
+		// Keep the last image but remove/modify buttons
 		_, err = s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 			ID:          messageID,
 			Channel:     channelID,
 			Files:       []*discordgo.File{{Name: "result.png", Reader: bytes.NewReader(data)}},
-			Components:  &[]discordgo.MessageComponent{},
+			Components:  &components,
 			Attachments: &[]*discordgo.MessageAttachment{},
 		})
 		if err != nil {
-			log.Errorf("Failed to remove buttons: %v", err)
+			log.Errorf("Failed to update buttons: %v", err)
 		}
 
-		delete(messageStates, messageID)
 		delete(cleanupTimers, messageID)
+		// NOTE: We don't delete messageStates here if keepShowCalcButton is true
 	})
 }
 
@@ -407,19 +449,27 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		timer.Reset(15 * time.Second)
 	}
 
+	if timer, exists := showCalcTimers[i.Message.ID]; exists {
+		timer.Reset(longButtonDuration)
+	}
+
 	if i.MessageComponentData().CustomID == ButtonShowCalc {
-		// err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		// 	Type: discordgo.InteractionResponseDeferredMessageUpdate,
-		// })
-		// if err != nil {
-		// 	log.Errorf("Failed to acknowledge interaction: %v", err)
-		// 	return
-		// }
+		var result calc.CalcSeedResult
+		filteredResults := getFilteredResults(state)
+		if len(filteredResults) > 0 {
+			if state.Index < len(filteredResults) {
+				result = filteredResults[state.Index]
+			} else {
+				result = filteredResults[0] // Fallback to first result if index is out of bounds
+			}
+		} else {
+			result = state.Results[0] // Fallback to first result in original results
+		}
 
 		// Create detailed calculation message
-		detailedCalc := formatDetailedCalculation(state.Rooms, getFilteredResults(state)[state.Index])
+		detailedCalc := formatDetailedCalculation(state.Rooms, result)
 
-		// Send a new message instead of responding to the interaction
+		// Send a new message with the calculation details
 		_, err = s.ChannelMessageSend(i.ChannelID, detailedCalc)
 		if err != nil {
 			log.Errorf("Failed to send calculation details: %v", err)
@@ -864,7 +914,7 @@ func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Filter:  ButtonAnyBoost,
 	}
 
-	timer := cleanupMessageState(message.ID, s, message.ChannelID)
+	timer := cleanupMessageState(message.ID, s, message.ChannelID, true)
 	cleanupTimers[message.ID] = timer
 }
 
