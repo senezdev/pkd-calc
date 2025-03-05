@@ -493,6 +493,59 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if state.Index < len(getFilteredResults(state))-1 {
 			state.Index++
 		}
+
+		// Check if the current result has a boost time >= boostless time
+		filteredResults := getFilteredResults(state)
+		if len(filteredResults) > 0 && state.Index < len(filteredResults) {
+			result := filteredResults[state.Index]
+
+			// Calculate boostless time
+			boostlessTime := 0.0
+			for _, room := range state.Rooms {
+				roomInfo := calc.RoomMap[room]
+				boostlessTime += roomInfo.BoostlessTime
+			}
+
+			// Get boost time from the result
+			boostTime := result.BoostTime
+
+			// If boost time >= boostless time, remove buttons and image and send text message
+			if boostTime >= boostlessTime {
+				response := "Just play boostless at this point bro like why do you even bother with boosts 🤔"
+
+				// Update the message to remove components and image
+				_, err := s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+					ID:          i.Message.ID,
+					Channel:     i.ChannelID,
+					Content:     &response,
+					Components:  &[]discordgo.MessageComponent{},
+					Attachments: &[]*discordgo.MessageAttachment{},
+				})
+				if err != nil {
+					log.Errorf("Failed to update message: %v", err)
+					return
+				}
+
+				// Delete state since we're done with this interaction
+				delete(messageStates, i.Message.ID)
+				if timer, exists := cleanupTimers[i.Message.ID]; exists {
+					timer.Stop()
+					delete(cleanupTimers, i.Message.ID)
+				}
+				if timer, exists := showCalcTimers[i.Message.ID]; exists {
+					timer.Stop()
+					delete(showCalcTimers, i.Message.ID)
+				}
+
+				// Confirm interaction is complete
+				_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{})
+				if err != nil {
+					log.Errorf("Failed to edit interaction response: %v", err)
+				}
+
+				return
+			}
+		}
 	case ButtonTwoBoost, ButtonThreeBoost, ButtonAnyBoost:
 		state.Filter = i.MessageComponentData().CustomID
 		state.Index = 0
