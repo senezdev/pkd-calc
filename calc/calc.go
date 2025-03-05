@@ -297,8 +297,8 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2",
-				Time:      11.5,
-				BoostTime: 13.5,
+				BoostTime: 11.5,
+				Time:      13.5,
 				Quality:   BestMove,
 			},
 		},
@@ -347,7 +347,7 @@ var RoomMap = map[string]room{
 			{
 				Name:      "cp 0-1",
 				Time:      24.5,
-				BoostTime: 3.5,
+				BoostTime: 1.5,
 				Quality:   BestMove,
 			},
 			{
@@ -479,7 +479,7 @@ var RoomMap = map[string]room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      20.5,
+				Time:      20.0,
 				BoostTime: 5.5,
 				Quality:   BrilliantMove,
 			},
