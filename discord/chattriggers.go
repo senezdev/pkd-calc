@@ -29,6 +29,17 @@ type BoostRoomsResponse struct {
 var seedCache = NewSeedCache(1 * time.Hour)
 
 func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool) (calc.CalcSeedResult, []BoostRoomsResponse, error) {
+	switch ign {
+	case "Tauktes":
+		ign = "TaPooktes"
+	case "Blrk":
+		ign = "BlrPoo"
+	case "O_N_E_Dimension":
+		ign = "P_O_O_Dimension"
+	case "senez":
+		ign = "The goat"
+	}
+
 	if s == nil {
 		return calc.CalcSeedResult{}, nil, fmt.Errorf("discord session is not initialized")
 	}
