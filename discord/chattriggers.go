@@ -41,6 +41,7 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 
 		rooms[i] = strings.ToLower(rooms[i])
 	}
+	rooms = append(rooms, "finish room")
 
 	if BotCommandsChannelID == "" {
 		BotCommandsChannelID = GetChannelIDByName("bot-commands")

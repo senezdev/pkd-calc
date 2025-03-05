@@ -734,6 +734,8 @@ func calcSeedInternal(roomList []string) ([]CalcSeedResult, error) {
 }
 
 func CalcSeed(roomList []string) ([]CalcSeedResult, error) {
-	roomList = append(roomList, "finish room")
+	if roomList[len(roomList)-1] != "finish room" {
+		roomList = append(roomList, "finish room")
+	}
 	return calcSeedInternal(roomList)
 }
