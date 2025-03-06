@@ -292,13 +292,13 @@ var RoomMap = map[string]room{
 			{
 				Name:      "cp 0-1",
 				BoostTime: 1.5,
-				Time:      14.5,
+				Time:      13.5,
 				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
-				BoostTime: 11.5,
-				Time:      13.5,
+				BoostTime: 11.0,
+				Time:      13.0,
 				Quality:   BestMove,
 			},
 		},

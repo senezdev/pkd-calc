@@ -321,6 +321,8 @@ var messageStates = make(map[string]*ResultState)
 
 var cleanupTimers = make(map[string]*time.Timer)
 
+var showCalcMessages = make(map[string]string)
+
 var (
 	showCalcTimers     = make(map[string]*time.Timer)
 	longButtonDuration = 5 * time.Minute
@@ -405,6 +407,8 @@ func cleanupMessageState(messageID string, s *discordgo.Session, channelID strin
 			log.Errorf("Failed to update buttons: %v", err)
 		}
 
+		delete(messageStates, messageID)
+		delete(showCalcMessages, messageID)
 		delete(cleanupTimers, messageID)
 		// NOTE: We don't delete messageStates here if keepShowCalcButton is true
 	})
@@ -469,10 +473,30 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		// Create detailed calculation message
 		detailedCalc := formatDetailedCalculation(state.Rooms, result)
 
-		// Send a new message with the calculation details
-		_, err = s.ChannelMessageSend(i.ChannelID, detailedCalc)
-		if err != nil {
-			log.Errorf("Failed to send calculation details: %v", err)
+		// Check if we already have a calculation message for this interaction
+		if calcMsgID, exists := showCalcMessages[i.Message.ID]; exists {
+			// Edit the existing message instead of sending a new one
+			_, err = s.ChannelMessageEdit(i.ChannelID, calcMsgID, detailedCalc)
+			if err != nil {
+				log.Errorf("Failed to edit calculation message: %v", err)
+				// If edit fails (message might be deleted), remove from map and send a new one
+				delete(showCalcMessages, i.Message.ID)
+				msg, err := s.ChannelMessageSend(i.ChannelID, detailedCalc)
+				if err == nil {
+					showCalcMessages[i.Message.ID] = msg.ID
+				} else {
+					log.Errorf("Failed to send calculation details: %v", err)
+				}
+			}
+		} else {
+			// Send a new message with the calculation details
+			msg, err := s.ChannelMessageSend(i.ChannelID, detailedCalc)
+			if err != nil {
+				log.Errorf("Failed to send calculation details: %v", err)
+			} else {
+				// Store the message ID for future references
+				showCalcMessages[i.Message.ID] = msg.ID
+			}
 		}
 
 		// Edit the original interaction response to confirm
@@ -528,6 +552,7 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 				// Delete state since we're done with this interaction
 				delete(messageStates, i.Message.ID)
+				delete(showCalcMessages, i.Message.ID) // Clean up calculation message reference
 				if timer, exists := cleanupTimers[i.Message.ID]; exists {
 					timer.Stop()
 					delete(cleanupTimers, i.Message.ID)
