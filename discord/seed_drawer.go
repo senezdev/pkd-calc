@@ -209,11 +209,7 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 			// Draw text in white
 			dc.SetColor(color.White)
 			var displayText string
-			if room.text == "Overhead 4b" {
-				displayText = fmt.Sprintf("Big Wood (%s)", room.checkpoint)
-			} else {
-				displayText = fmt.Sprintf("%s (%s)", room.text, room.checkpoint)
-			}
+			displayText = fmt.Sprintf("%s (%s)", room.text, room.checkpoint)
 			dc.DrawStringAnchored(displayText, float64(width)/2, float64(y), 0.5, 0.5)
 
 			dc.SetColor(color.RGBA{255, 255, 200, 255})
@@ -231,11 +227,7 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 			dc.SetColor(color.White)
 
 			var displayText string
-			if room.text == "Overhead 4b" {
-				displayText = "Big Wood"
-			} else {
-				displayText = room.text
-			}
+			displayText = room.text
 
 			dc.DrawStringAnchored(displayText, float64(width)/2, float64(y), 0.5, 0.5)
 		}

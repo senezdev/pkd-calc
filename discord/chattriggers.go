@@ -31,7 +31,7 @@ var seedCache = NewSeedCache(1 * time.Hour)
 func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool) (calc.CalcSeedResult, []BoostRoomsResponse, error) {
 	switch ign {
 	case "Tauktes":
-		ign = "PooPooktes"
+		ign = "PooPooPooPoo"
 	case "Blrk":
 		ign = "0Zl4Ms9Jc3_B8aN6"
 	case "O_N_E_Dimension":
