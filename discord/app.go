@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"pkd-bot/calc"
+	"pkd-bot/hypixel"
 	"pkd-bot/tournaments"
 
 	"github.com/bwmarrin/discordgo"
@@ -102,6 +103,10 @@ var commands = []*discordgo.ApplicationCommand{
 		Description: "Choose 8 rooms",
 		Options:     generateOptions(),
 	},
+	// {
+	// 	Name:        "playercount",
+	// 	Description: "Find out the current player count in PKD!",
+	// },
 }
 
 func tournamentHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -204,6 +209,54 @@ func registerTournamentHandler(s *discordgo.Session, i *discordgo.InteractionCre
 	})
 }
 
+func playercountHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	logUserInteraction(i, "command", "playercount")
+
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{},
+	})
+	if err != nil {
+		log.Errorf("Failed to defer response: %v", err)
+		return
+	}
+
+	playerCount, err := hypixel.GetPlayerCount()
+	content := "Failed to fetch player count from Hypixel API. Please try again later."
+	if err != nil {
+		log.Errorf("Failed to get player count: %v", err)
+		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: &content,
+		})
+		if err != nil {
+			log.Errorf("Failed to edit response with error message: %v", err)
+		}
+		return
+	}
+
+	embed := &discordgo.MessageEmbed{
+		Title: "Parkour Duels",
+		Color: 0x45D3B3,
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: "https://static.wikia.nocookie.net/hypixel-skyblock/images/5/5c/Hypixel_Logo.png/revision/latest/scale-to-width-down/250",
+		},
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "Current player count",
+				Value:  fmt.Sprintf("**%d**", playerCount),
+				Inline: false,
+			},
+		},
+	}
+
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{embed},
+	})
+	if err != nil {
+		log.Errorf("Failed to edit response with player count: %v", err)
+	}
+}
+
 var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 	"basic-command": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -215,6 +268,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 	},
 	"tournament": tournamentHandler,
 	"calc":       calcSeedHandler,
+	// "playercount": playercountHandler,
 }
 
 var options = calc.GetRooms()
@@ -415,6 +469,8 @@ func cleanupMessageState(messageID string, s *discordgo.Session, channelID strin
 }
 
 func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	logUserInteraction(i, "button click", i.MessageComponentData().CustomID)
+
 	defer func() {
 		if err := recover(); err != nil {
 			log.Errorf("application panicked while handling a request: %v", err)
@@ -890,6 +946,8 @@ func levenshteinDistance(a, b string) int {
 }
 
 func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	logUserInteraction(i, "command", "calc")
+
 	defer func() {
 		if err := recover(); err != nil {
 			log.Errorf("application panicked while handling a request: %v", err)
@@ -1036,6 +1094,41 @@ func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 	if err != nil {
 		log.Errorf("Failed to respond with choices: %v", err)
+	}
+}
+
+func logUserInteraction(i *discordgo.InteractionCreate, interactionType string, actionName string) {
+	var username, nickname, userID string
+
+	// Get user ID
+	if i.User != nil {
+		// DM context
+		userID = i.User.ID
+		username = i.User.Username
+		nickname = username // No nicknames in DMs
+	} else if i.Member != nil {
+		// Guild context
+		userID = i.Member.User.ID
+		username = i.Member.User.Username
+
+		// Get nickname if available
+		if i.Member.Nick != "" {
+			nickname = i.Member.Nick
+		} else {
+			nickname = username
+		}
+	} else {
+		log.Warn("Could not identify user from interaction")
+		return
+	}
+
+	// Log the interaction with user details
+	log.Infof("User %s (%s, ID: %s) performed %s: %s",
+		nickname, username, userID, interactionType, actionName)
+
+	// If it's the ShowCalc button, log more details
+	if interactionType == "button click" && actionName == ButtonShowCalc {
+		log.Infof("User %s (%s) requested calculation details", nickname, userID)
 	}
 }
 
