@@ -240,8 +240,8 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 		prefix string
 		time   string
 	}{
-		{"Boost time: ", FormatTime(res.BoostTime)},
-		{"Boostless time: ", FormatTime(res.BoostlessTime)},
+		{"Boost time: ", FormatTime(res.BoostTime + 15*60)},
+		{"Boostless time: ", FormatTime(res.BoostlessTime + 15*60)},
 	}
 
 	var maxPrefixWidth, maxTimeWidth float64
@@ -265,6 +265,13 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 		dc.DrawString(tt.time, startX+maxPrefixWidth, float64(y))
 		y += 30
 	}
+
+	dc.SetColor(color.RGBA{255, 200, 200, 255}) // Light red/pink color for the sad message
+	messageText := "because no skips work now :sob:"
+	messageWidth, _ := dc.MeasureString(messageText)
+	messageX := float64(width)/2 - messageWidth/2 // Center the text
+	dc.DrawString(messageText, messageX, float64(y))
+	y += 30 // Increment y position for any potential future text
 
 	var buf bytes.Buffer
 	dc.EncodePNG(&buf)
