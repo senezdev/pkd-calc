@@ -266,13 +266,6 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 		y += 30
 	}
 
-	dc.SetColor(color.RGBA{255, 200, 200, 255}) // Light red/pink color for the sad message
-	messageText := "because no skips work now :sob:"
-	messageWidth, _ := dc.MeasureString(messageText)
-	messageX := float64(width)/2 - messageWidth/2 // Center the text
-	dc.DrawString(messageText, messageX, float64(y))
-	y += 30 // Increment y position for any potential future text
-
 	var buf bytes.Buffer
 	dc.EncodePNG(&buf)
 	return buf, nil
