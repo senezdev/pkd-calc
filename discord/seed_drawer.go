@@ -240,8 +240,8 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 		prefix string
 		time   string
 	}{
-		{"Boost time: ", FormatTime(res.BoostTime + 15*60)},
-		{"Boostless time: ", FormatTime(res.BoostlessTime + 15*60)},
+		{"Boost time: ", FormatTime(res.BoostTime)},
+		{"Boostless time: ", FormatTime(res.BoostlessTime)},
 	}
 
 	var maxPrefixWidth, maxTimeWidth float64
