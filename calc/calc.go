@@ -40,7 +40,7 @@ type room struct {
 var RoomMap = map[string]room{
 	"around pillars": {
 		Name:          "Around Pillars",
-		BoostlessTime: 16.9,
+		BoostlessTime: 16.8,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -62,7 +62,7 @@ var RoomMap = map[string]room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      12.0,
+				Time:      11.8,
 				BoostTime: 3.0,
 				Quality:   BestMove,
 			},
@@ -176,7 +176,7 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2",
-				Time:      10.4,
+				Time:      10.1,
 				BoostTime: 7.4,
 				Quality:   BestMove,
 			},
@@ -254,7 +254,7 @@ var RoomMap = map[string]room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      11.9,
+				Time:      11.8,
 				BoostTime: 1.0,
 				Quality:   BestMove,
 			},
@@ -268,7 +268,7 @@ var RoomMap = map[string]room{
 	},
 	"overhead 4b": {
 		Name:          "Overhead 4b",
-		BoostlessTime: 23.7,
+		BoostlessTime: 23.3,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -499,11 +499,11 @@ var RoomMap = map[string]room{
 	},
 	"finish room": {
 		Name:          "Finish Room",
-		BoostlessTime: 4.3,
+		BoostlessTime: 4.4,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "lol",
-				Time:      3.0,
+				Time:      2.9,
 				BoostTime: 0.5,
 				Quality:   BestMove,
 			},
