@@ -272,15 +272,6 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 }
 
 func FormatTime(seconds float64) string {
-	decimal := seconds - float64(int(seconds))
-	if decimal != 0.0 && decimal != 0.5 {
-		if decimal < 0.5 {
-			seconds = float64(int(seconds)) + 0.5
-		} else {
-			seconds = float64(int(seconds)) + 1.0
-		}
-	}
-
 	minutes := int(seconds) / 60
 	remainingSeconds := seconds - float64(minutes*60)
 
