@@ -112,7 +112,7 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 		roomsOutput[br.Ind].checkpoint = calc.RoomMap[roomList[br.Ind]].BoostStrats[br.StratInd].Name
 		roomsOutput[br.Ind].moveQuality = calc.RoomMap[roomList[br.Ind]].BoostStrats[br.StratInd].Quality
 		if math.Abs(br.Pacelock) >= 1e-6 {
-			roomsOutput[br.Ind].pacelock = fmt.Sprintf("pacelock %vs", br.Pacelock)
+			roomsOutput[br.Ind].pacelock = fmt.Sprintf("pacelock %.1fs", math.Round(br.Pacelock*10)/10)
 		}
 	}
 
