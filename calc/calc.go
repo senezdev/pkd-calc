@@ -58,7 +58,7 @@ var RoomMap = map[string]room{
 	},
 	"blocks": {
 		Name:          "Blocks",
-		BoostlessTime: 21.7,
+		BoostlessTime: 21.3,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -68,8 +68,8 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2",
-				Time:      18.5,
-				BoostTime: 16.0,
+				Time:      16.9,
+				BoostTime: 15.5,
 				Quality:   BestMove,
 			},
 		},
@@ -104,7 +104,7 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2 + salami",
-				Time:      16.5,
+				Time:      16.3,
 				BoostTime: 14.5,
 				Quality:   BestMove,
 			},
@@ -112,7 +112,7 @@ var RoomMap = map[string]room{
 	},
 	"early 3+1": {
 		Name:          "Early 3+1",
-		BoostlessTime: 25.3,
+		BoostlessTime: 24.8,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -473,7 +473,7 @@ var RoomMap = map[string]room{
 
 			{
 				Name:      "cp 1-2",
-				Time:      12.1,
+				Time:      11.5,
 				BoostTime: 10.0,
 				Quality:   BestMove,
 			},
