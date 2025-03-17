@@ -112,7 +112,7 @@ var RoomMap = map[string]room{
 	},
 	"early 3+1": {
 		Name:          "Early 3+1",
-		BoostlessTime: 25.25,
+		BoostlessTime: 25.3,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -348,7 +348,7 @@ var RoomMap = map[string]room{
 	"sandpit": {
 		// 13.5 15.5
 		Name:          "Sandpit",
-		BoostlessTime: 34.75,
+		BoostlessTime: 33.8,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
