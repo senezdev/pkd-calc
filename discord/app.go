@@ -676,65 +676,85 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) string {
 	rooms = append(rooms, "finish room")
-	// Create formatted strings for both boost and boostless times
 	boostCalc := "Boost time calculation:\n```\n"
 	boostlessCalc := "Boostless time calculation:\n```\n"
 
-	// Track room times for both calculations
 	boostTimeSum := 0.0
 	boostlessTimeSum := 0.0
 
-	// Make a map of boost rooms for quick lookup
 	boostRooms := make(map[int]calc.CalcResultBoost)
 	for _, br := range result.BoostRooms {
 		boostRooms[br.Ind] = br
 	}
 
-	// Process each room
 	for i, room := range rooms {
 		roomInfo := calc.RoomMap[room]
 
-		// For boostless calculation
 		boostlessTime := roomInfo.BoostlessTime
 		boostlessTimeSum += boostlessTime
-		boostlessCalc += fmt.Sprintf("%.2f", boostlessTime)
 
-		// Check if we need a + sign
-		if i < len(rooms)-1 {
-			boostlessCalc += " + "
-		}
+		boostlessCalc += fmt.Sprintf("%s: %.2f", room, boostlessTime)
 
-		// For boost calculation
 		if boost, isBoost := boostRooms[i]; isBoost {
-			// This is a boost room
 			boostTime := roomInfo.BoostStrats[boost.StratInd].Time
+			boostStart := roomInfo.BoostStrats[boost.StratInd].BoostTime
 			boostTimeSum += boostTime
 
-			boostCalc += fmt.Sprintf("%.2f",
-				boostTime)
+			boostCalc += fmt.Sprintf("%s: %.2f (before boost) + %.2f", room, boostStart, boostTime-boostStart)
 
-			// Add pacelock if present
 			if boost.Pacelock > 0 {
 				boostCalc += fmt.Sprintf(" + %.2f (pacelock)", boost.Pacelock)
 				boostTimeSum += boost.Pacelock
 			}
 		} else {
-			// Not a boost room, use boostless time
 			boostTime := roomInfo.BoostlessTime
 			boostTimeSum += boostTime
-			boostCalc += fmt.Sprintf("%.2f", boostTime)
+			boostCalc += fmt.Sprintf("%s: %.2f", room, boostTime)
+		}
+		if i == 0 {
+			boostlessCalc += " - 0.3 (accounting for r1)"
+			boostCalc += " - 0.3 (accounting for r1)"
+		} else {
+			prevRoom := rooms[i-1]
+			if prevRoom == "four towers" {
+				boostlessCalc += " - 0.2 (accounting for four towers timesave)"
+				boostCalc += " - 0.2 (accounting for four towers timesave)"
+			}
+
+			if prevRoom == "sandpit" || prevRoom == "castle wall" {
+				boostlessCalc += " - 0.1 (accounting for ib hh)"
+				boostCalc += " - 0.1 (accounting for ib hh)"
+			}
+
+			if prevRoom == "early 3+1" {
+				for _, boost := range boostRooms {
+					if boost.Ind == i-1 && boost.StratInd == 1 {
+						boostCalc += " - 0.5 (accounting for early 3+1 boost timesave)"
+						break
+					}
+				}
+			}
+
+			if prevRoom == "underbridge" {
+				for _, boost := range boostRooms {
+					if boost.Ind == i-1 && boost.StratInd == 1 {
+						boostCalc += " - 0.2 (accounting for underbridge boost timesave)"
+						break
+					}
+				}
+			}
 		}
 
-		// Check if we need a + sign
 		if i < len(rooms)-1 {
-			boostCalc += " + "
+			boostCalc += "\n"
+			boostlessCalc += "\n"
 		}
 	}
 
-	boostCalc += fmt.Sprintf(" = %.2f = %s", boostTimeSum, FormatTime(boostTimeSum))
+	boostCalc += fmt.Sprintf("\n= %.2f = %s", boostTimeSum, FormatTime(boostTimeSum))
 	boostCalc += "\n```\n"
 
-	boostlessCalc += fmt.Sprintf(" = %.2f = %s", boostlessTimeSum, FormatTime(boostlessTimeSum))
+	boostlessCalc += fmt.Sprintf("\n= %.2f = %s", boostlessTimeSum, FormatTime(boostlessTimeSum))
 
 	boostlessCalc += "\n```"
 
