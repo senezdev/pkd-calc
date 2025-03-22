@@ -546,6 +546,73 @@ type calcResult struct {
 	boostRooms []CalcResultBoost
 }
 
+const (
+	roomOneTimesave float64 = 0.3
+	early31Timesave float64 = 0.5
+	ibTimesave      float64 = 0.1
+	ubTimesave      float64 = 0.2
+	ftTimesave      float64 = 0.2
+)
+
+func calcTimesave(roomList []string, boostStrat []CalcResultBoost) (float64, []CalcResultBoost) {
+	totalTimesave := 0.0
+	modifiedBoostStrat := make([]CalcResultBoost, len(boostStrat))
+	copy(modifiedBoostStrat, boostStrat)
+
+	totalTimesave += roomOneTimesave
+
+	timesaveBeforeBoost := make(map[int]float64)
+
+	for i := 1; i < len(roomList); i++ {
+		prevRoomName := RoomMap[roomList[i-1]].Name
+		currentTimesave := 0.0
+
+		if strings.ToLower(prevRoomName) == "early 3+1" {
+			for _, boost := range boostStrat {
+				if boost.Ind == i-1 && boost.StratInd == 1 {
+					currentTimesave += early31Timesave
+					break
+				}
+			}
+		}
+
+		if strings.ToLower(prevRoomName) == "four towers" {
+			currentTimesave += ftTimesave
+		}
+
+		if strings.ToLower(prevRoomName) == "sandpit" || strings.ToLower(prevRoomName) == "castle wall" {
+			currentTimesave += ibTimesave
+		}
+
+		if strings.ToLower(prevRoomName) == "underbridge" {
+			for _, boost := range boostStrat {
+				if boost.Ind == i-1 && boost.StratInd == 1 {
+					currentTimesave += ubTimesave
+					break
+				}
+			}
+		}
+
+		totalTimesave += currentTimesave
+
+		if currentTimesave > 0 {
+			for j, boost := range modifiedBoostStrat {
+				if boost.Ind > i {
+					timesaveBeforeBoost[j] += currentTimesave
+				}
+			}
+		}
+	}
+
+	for i := 1; i < len(modifiedBoostStrat); i++ {
+		if timesave, exists := timesaveBeforeBoost[i]; exists && timesave > 0 {
+			modifiedBoostStrat[i].Pacelock += timesave
+		}
+	}
+
+	return totalTimesave, modifiedBoostStrat
+}
+
 func calcTwoBoost(roomList []string) ([]calcResult, error) {
 	if RoomMap[roomList[len(roomList)-1]].Name != "Finish Room" {
 		err := fmt.Errorf("last room is supposed to be finish room. this is a programming error")
@@ -571,6 +638,10 @@ func calcTwoBoost(roomList []string) ([]calcResult, error) {
 					pacelock := max(0, 60-(timeBetweenBoosts+firstBoostRoom.BoostStrats[firstBoostStrat].Time-firstBoostRoom.BoostStrats[firstBoostStrat].BoostTime+secondBoostRoom.BoostStrats[secondBoostStrat].BoostTime))
 
 					boostTime := boostlessTime - (firstBoostRoom.BoostlessTime - firstBoostRoom.BoostStrats[firstBoostStrat].Time) - (secondBoostRoom.BoostlessTime - secondBoostRoom.BoostStrats[secondBoostStrat].Time) + pacelock
+
+					if i == 0 {
+						boostTime -= roomOneTimesave
+					}
 
 					results = append(results, calcResult{
 						time: boostTime,
