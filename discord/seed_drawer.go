@@ -36,7 +36,8 @@ func drawCalcResults(roomList []string, calcResults []calc.CalcSeedResult) (byte
 	maxPacelockWidth := 0.0
 	for _, br := range res.BoostRooms {
 		if math.Abs(br.Pacelock) >= 1e-6 {
-			pacelockText := fmt.Sprintf("pacelock %vs", br.Pacelock)
+			roundedPacelock := math.Round(br.Pacelock*10) / 10
+			pacelockText := fmt.Sprintf("pacelock %.1fs", roundedPacelock)
 			width, _ := tempDC.MeasureString(pacelockText)
 			if width > maxPacelockWidth {
 				maxPacelockWidth = width

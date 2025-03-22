@@ -532,6 +532,8 @@ func calcBoostless(roomList []string) float64 {
 		time += RoomMap[room].BoostlessTime
 	}
 
+	// timesave := calcTimesave(roomList, nil)
+
 	return time
 }
 
@@ -554,14 +556,10 @@ const (
 	ftTimesave      float64 = 0.2
 )
 
-func calcTimesave(roomList []string, boostStrat []CalcResultBoost) (float64, []CalcResultBoost) {
+func calcTimesave(roomList []string, boostStrat []CalcResultBoost) float64 {
 	totalTimesave := 0.0
-	modifiedBoostStrat := make([]CalcResultBoost, len(boostStrat))
-	copy(modifiedBoostStrat, boostStrat)
 
 	totalTimesave += roomOneTimesave
-
-	timesaveBeforeBoost := make(map[int]float64)
 
 	for i := 1; i < len(roomList); i++ {
 		prevRoomName := RoomMap[roomList[i-1]].Name
@@ -594,23 +592,9 @@ func calcTimesave(roomList []string, boostStrat []CalcResultBoost) (float64, []C
 		}
 
 		totalTimesave += currentTimesave
-
-		if currentTimesave > 0 {
-			for j, boost := range modifiedBoostStrat {
-				if boost.Ind > i {
-					timesaveBeforeBoost[j] += currentTimesave
-				}
-			}
-		}
 	}
 
-	for i := 1; i < len(modifiedBoostStrat); i++ {
-		if timesave, exists := timesaveBeforeBoost[i]; exists && timesave > 0 {
-			modifiedBoostStrat[i].Pacelock += timesave
-		}
-	}
-
-	return totalTimesave, modifiedBoostStrat
+	return totalTimesave
 }
 
 func calcTwoBoost(roomList []string) ([]calcResult, error) {
@@ -639,23 +623,22 @@ func calcTwoBoost(roomList []string) ([]calcResult, error) {
 
 					boostTime := boostlessTime - (firstBoostRoom.BoostlessTime - firstBoostRoom.BoostStrats[firstBoostStrat].Time) - (secondBoostRoom.BoostlessTime - secondBoostRoom.BoostStrats[secondBoostStrat].Time) + pacelock
 
-					if i == 0 {
-						boostTime -= roomOneTimesave
+					boostStrat := []CalcResultBoost{
+						{
+							Ind:      i,
+							StratInd: firstBoostStrat,
+						},
+						{
+							Ind:      j,
+							StratInd: secondBoostStrat,
+							Pacelock: pacelock,
+						},
 					}
+					timesave := calcTimesave(roomList, boostStrat)
 
 					results = append(results, calcResult{
-						time: boostTime,
-						boostRooms: []CalcResultBoost{
-							{
-								Ind:      i,
-								StratInd: firstBoostStrat,
-							},
-							{
-								Ind:      j,
-								StratInd: secondBoostStrat,
-								Pacelock: pacelock,
-							},
-						},
+						time:       boostTime - timesave,
+						boostRooms: boostStrat,
 					})
 				}
 			}
@@ -707,24 +690,28 @@ func calcThreeBoost(roomList []string) ([]calcResult, error) {
 							pacelock2 := max(0, 60-(timeBetweenBoosts23+secondBoostRoom.BoostStrats[secondBoostStrat].Time-secondBoostRoom.BoostStrats[secondBoostStrat].BoostTime+thirdBoostRoom.BoostStrats[thirdBoostStrat].BoostTime))
 							boostTime := boostlessTime - (firstBoostRoom.BoostlessTime - firstBoostRoom.BoostStrats[firstBoostStrat].Time) - (secondBoostRoom.BoostlessTime - secondBoostRoom.BoostStrats[secondBoostStrat].Time) - (thirdBoostRoom.BoostlessTime - thirdBoostRoom.BoostStrats[thirdBoostStrat].Time) + pacelock1 + pacelock2
 
-							results = append(results, calcResult{
-								time: boostTime,
-								boostRooms: []CalcResultBoost{
-									{
-										Ind:      i,
-										StratInd: firstBoostStrat,
-									},
-									{
-										Ind:      j,
-										StratInd: secondBoostStrat,
-										Pacelock: pacelock1,
-									},
-									{
-										Ind:      k,
-										StratInd: thirdBoostStrat,
-										Pacelock: pacelock2,
-									},
+							boostStrat := []CalcResultBoost{
+								{
+									Ind:      i,
+									StratInd: firstBoostStrat,
 								},
+								{
+									Ind:      j,
+									StratInd: secondBoostStrat,
+									Pacelock: pacelock1,
+								},
+								{
+									Ind:      k,
+									StratInd: thirdBoostStrat,
+									Pacelock: pacelock2,
+								},
+							}
+
+							timesave := calcTimesave(roomList, boostStrat)
+
+							results = append(results, calcResult{
+								time:       boostTime - timesave,
+								boostRooms: boostStrat,
 							})
 						}
 					}
@@ -773,6 +760,8 @@ func mergeSortedResults(a, b []calcResult) []calcResult {
 
 func calcSeedInternal(roomList []string) ([]CalcSeedResult, error) {
 	boostlessTime := calcBoostless(roomList)
+	boostlessTime -= calcTimesave(roomList, nil)
+
 	res := make([]CalcSeedResult, 0, 5)
 
 	twoBoost, err := calcTwoBoost(roomList)

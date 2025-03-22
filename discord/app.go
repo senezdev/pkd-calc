@@ -704,51 +704,62 @@ func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) strin
 
 		boostlessTime := roomInfo.BoostlessTime
 		boostlessTimeSum += boostlessTime
-
 		boostlessCalc.WriteString(fmt.Sprintf(formatStr, room, boostlessTime))
+
+		var boostLine strings.Builder
 
 		if boost, isBoost := boostRooms[i]; isBoost {
 			boostTime := roomInfo.BoostStrats[boost.StratInd].Time
 			boostStart := roomInfo.BoostStrats[boost.StratInd].BoostTime
 			boostTimeSum += boostTime
 
-			baseBoostStr := fmt.Sprintf(formatStr, room, boostStart)
-			boostCalc.WriteString(baseBoostStr)
+			boostLine.WriteString(fmt.Sprintf(formatStr, room, boostStart))
 
-			indent := strings.Repeat(" ", maxRoomNameLength+10)
-			boostCalc.WriteString(fmt.Sprintf(" + %5.2f (after boost)", boostTime-boostStart))
+			boostLine.WriteString(fmt.Sprintf(" (before boost) + %5.2f", boostTime-boostStart))
 
 			if boost.Pacelock > 0 {
-				boostCalc.WriteString(fmt.Sprintf("\n%s + %5.2f (pacelock)", indent, boost.Pacelock))
+				boostLine.WriteString(fmt.Sprintf(" + %5.2f (pacelock)", boost.Pacelock))
 				boostTimeSum += boost.Pacelock
 			}
 		} else {
 			boostTime := roomInfo.BoostlessTime
 			boostTimeSum += boostTime
-			boostCalc.WriteString(fmt.Sprintf(formatStr, room, boostTime))
+			boostLine.WriteString(fmt.Sprintf(formatStr, room, boostTime))
 		}
 
-		indent := strings.Repeat(" ", maxRoomNameLength+10)
+		boostCalc.WriteString(boostLine.String())
 
 		if i == 0 {
-			boostlessCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for r1)", indent, 0.3))
-			boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for r1)", indent, 0.3))
+			boostlessCalc.WriteString(fmt.Sprintf(" - %5.2f (accounting for r1)", 0.3))
+			boostCalc.WriteString(fmt.Sprintf(" - %5.2f (accounting for r1)", 0.3))
+
+			boostlessTimeSum -= 0.3
+			boostTimeSum -= 0.3
 		} else {
 			prevRoom := rooms[i-1]
+
 			if prevRoom == "four towers" {
-				boostlessCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for four towers timesave)", indent, 0.2))
-				boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for four towers timesave)", indent, 0.2))
+				boostlessCalc.WriteString(fmt.Sprintf(" - %5.2f (four towers timesave)", 0.2))
+				boostCalc.WriteString(fmt.Sprintf(" - %5.2f (four towers timesave)", 0.2))
+
+				boostlessTimeSum -= 0.2
+				boostTimeSum -= 0.2
 			}
 
 			if prevRoom == "sandpit" || prevRoom == "castle wall" {
-				boostlessCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for ib hh)", indent, 0.1))
-				boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for ib hh)", indent, 0.1))
+				boostlessCalc.WriteString(fmt.Sprintf(" - %5.2f (ib hh)", 0.1))
+				boostCalc.WriteString(fmt.Sprintf(" - %5.2f (ib hh)", 0.1))
+
+				boostlessTimeSum -= 0.1
+				boostTimeSum -= 0.1
 			}
 
 			if prevRoom == "early 3+1" {
 				for _, boost := range boostRooms {
 					if boost.Ind == i-1 && boost.StratInd == 1 {
-						boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for early 3+1 boost timesave)", indent, 0.5))
+						boostCalc.WriteString(fmt.Sprintf(" - %5.2f (early 3+1 boost timesave)", 0.5))
+
+						boostTimeSum -= 0.5
 						break
 					}
 				}
@@ -757,7 +768,9 @@ func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) strin
 			if prevRoom == "underbridge" {
 				for _, boost := range boostRooms {
 					if boost.Ind == i-1 && boost.StratInd == 1 {
-						boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for underbridge boost timesave)", indent, 0.2))
+						boostCalc.WriteString(fmt.Sprintf(" - %5.2f (underbridge boost timesave)", 0.2))
+
+						boostTimeSum -= 0.2
 						break
 					}
 				}
@@ -770,17 +783,14 @@ func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) strin
 		}
 	}
 
-	// Add separator line for totals
 	separatorLine := strings.Repeat("-", maxRoomNameLength+20)
 
-	// Add totals with proper formatting
 	boostCalc.WriteString(fmt.Sprintf("\n%s\nTotal: %6.2f seconds = %s\n", separatorLine, boostTimeSum, FormatTime(boostTimeSum)))
 	boostCalc.WriteString("```\n")
 
 	boostlessCalc.WriteString(fmt.Sprintf("\n%s\nTotal: %6.2f seconds = %s\n", separatorLine, boostlessTimeSum, FormatTime(boostlessTimeSum)))
 	boostlessCalc.WriteString("```")
 
-	// Add a comparison of time saved
 	timeSaved := boostlessTimeSum - boostTimeSum
 	var comparisonText string
 	if timeSaved > 0 {
