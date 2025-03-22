@@ -40,11 +40,11 @@ type room struct {
 var RoomMap = map[string]room{
 	"around pillars": {
 		Name:          "Around Pillars",
-		BoostlessTime: 16.8,
+		BoostlessTime: 16.9,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      10.7,
+				Time:      10.5,
 				BoostTime: 1.0,
 				Quality:   BestMove,
 			},
@@ -62,14 +62,14 @@ var RoomMap = map[string]room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      11.8,
+				Time:      12.0,
 				BoostTime: 3.0,
 				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
 				Time:      16.9,
-				BoostTime: 15.5,
+				BoostTime: 16.1,
 				Quality:   BestMove,
 			},
 		},
@@ -80,7 +80,7 @@ var RoomMap = map[string]room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      9.2,
+				Time:      9.5,
 				BoostTime: 5,
 				Quality:   BestMove,
 			},
@@ -104,7 +104,7 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2 + salami",
-				Time:      16.3,
+				Time:      16.5,
 				BoostTime: 14.5,
 				Quality:   BestMove,
 			},
@@ -140,7 +140,7 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2",
-				Time:      15.0,
+				Time:      14.3,
 				BoostTime: 13.0,
 				Quality:   BestMove,
 			},
@@ -176,7 +176,7 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2",
-				Time:      10.1,
+				Time:      10.4,
 				BoostTime: 7.4,
 				Quality:   BestMove,
 			},
@@ -200,8 +200,8 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 2-3",
-				Time:      21.0,
-				BoostTime: 18.5,
+				Time:      18.0,
+				BoostTime: 15.5,
 				Quality:   GreatMove,
 			},
 		},
@@ -218,7 +218,7 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2",
-				Time:      9.8,
+				Time:      10.1,
 				BoostTime: 4.0,
 				Quality:   BestMove,
 			},
@@ -250,11 +250,11 @@ var RoomMap = map[string]room{
 	},
 	"ladder tower": {
 		Name:          "Ladder Tower",
-		BoostlessTime: 25.0,
+		BoostlessTime: 24.0,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      11.8,
+				Time:      12.1,
 				BoostTime: 1.0,
 				Quality:   BestMove,
 			},
@@ -268,7 +268,7 @@ var RoomMap = map[string]room{
 	},
 	"overhead 4b": {
 		Name:          "Overhead 4b",
-		BoostlessTime: 23.3,
+		BoostlessTime: 23.7,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -285,15 +285,15 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 2-3",
-				Time:      21.5,
-				BoostTime: 19.0,
+				Time:      19.2,
+				BoostTime: 16.0,
 				Quality:   BrilliantMove,
 			},
 		},
 	},
 	"quartz climb": {
 		Name:          "Quartz Climb",
-		BoostlessTime: 19.6,
+		BoostlessTime: 19.2,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -311,11 +311,11 @@ var RoomMap = map[string]room{
 	},
 	"quartz temple": {
 		Name:          "Quartz Temple",
-		BoostlessTime: 15.8,
+		BoostlessTime: 16.00,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      7.8,
+				Time:      8.0,
 				BoostTime: 1,
 				Quality:   BestMove,
 			},
@@ -333,7 +333,7 @@ var RoomMap = map[string]room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      8.0,
+				Time:      7.7,
 				BoostTime: 2.0,
 				Quality:   GreatMove,
 			},
@@ -352,13 +352,13 @@ var RoomMap = map[string]room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      24.5,
+				Time:      23.8,
 				BoostTime: 1.5,
 				Quality:   BestMove,
 			},
 			{
 				Name:      "cp 1-2",
-				Time:      22.5,
+				Time:      22.8,
 				BoostTime: 13.5,
 				Quality:   BestMove,
 			},
@@ -400,7 +400,7 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 2-3",
-				Time:      16.5,
+				Time:      15.6,
 				BoostTime: 13.5,
 				Quality:   BrilliantMove,
 			},
@@ -426,11 +426,11 @@ var RoomMap = map[string]room{
 	},
 	"tower tightrope": {
 		Name:          "Tower Tightrope",
-		BoostlessTime: 21.8,
+		BoostlessTime: 22.20,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      9.3,
+				Time:      10.0,
 				BoostTime: 1.5,
 				Quality:   BestMove,
 			},
@@ -444,7 +444,7 @@ var RoomMap = map[string]room{
 	},
 	"triple platform": {
 		Name:          "Triple Platform",
-		BoostlessTime: 18.4,
+		BoostlessTime: 18.3,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
