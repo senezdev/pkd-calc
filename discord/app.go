@@ -676,8 +676,20 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) string {
 	rooms = append(rooms, "finish room")
-	boostCalc := "Boost time calculation:\n```\n"
-	boostlessCalc := "Boostless time calculation:\n```\n"
+
+	var boostCalc, boostlessCalc strings.Builder
+
+	maxRoomNameLength := 0
+	for _, room := range rooms {
+		if len(room) > maxRoomNameLength {
+			maxRoomNameLength = len(room)
+		}
+	}
+
+	boostCalc.WriteString("**Boost time calculation:**\n```\n")
+	boostlessCalc.WriteString("**Boostless time calculation:**\n```\n")
+
+	formatStr := "%-" + fmt.Sprintf("%d", maxRoomNameLength+1) + "s: %6.2f"
 
 	boostTimeSum := 0.0
 	boostlessTimeSum := 0.0
@@ -693,43 +705,50 @@ func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) strin
 		boostlessTime := roomInfo.BoostlessTime
 		boostlessTimeSum += boostlessTime
 
-		boostlessCalc += fmt.Sprintf("%s: %.2f", room, boostlessTime)
+		boostlessCalc.WriteString(fmt.Sprintf(formatStr, room, boostlessTime))
 
 		if boost, isBoost := boostRooms[i]; isBoost {
 			boostTime := roomInfo.BoostStrats[boost.StratInd].Time
 			boostStart := roomInfo.BoostStrats[boost.StratInd].BoostTime
 			boostTimeSum += boostTime
 
-			boostCalc += fmt.Sprintf("%s: %.2f (before boost) + %.2f", room, boostStart, boostTime-boostStart)
+			baseBoostStr := fmt.Sprintf(formatStr, room, boostStart)
+			boostCalc.WriteString(baseBoostStr)
+
+			indent := strings.Repeat(" ", maxRoomNameLength+10)
+			boostCalc.WriteString(fmt.Sprintf(" + %5.2f (after boost)", boostTime-boostStart))
 
 			if boost.Pacelock > 0 {
-				boostCalc += fmt.Sprintf(" + %.2f (pacelock)", boost.Pacelock)
+				boostCalc.WriteString(fmt.Sprintf("\n%s + %5.2f (pacelock)", indent, boost.Pacelock))
 				boostTimeSum += boost.Pacelock
 			}
 		} else {
 			boostTime := roomInfo.BoostlessTime
 			boostTimeSum += boostTime
-			boostCalc += fmt.Sprintf("%s: %.2f", room, boostTime)
+			boostCalc.WriteString(fmt.Sprintf(formatStr, room, boostTime))
 		}
+
+		indent := strings.Repeat(" ", maxRoomNameLength+10)
+
 		if i == 0 {
-			boostlessCalc += " - 0.3 (accounting for r1)"
-			boostCalc += " - 0.3 (accounting for r1)"
+			boostlessCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for r1)", indent, 0.3))
+			boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for r1)", indent, 0.3))
 		} else {
 			prevRoom := rooms[i-1]
 			if prevRoom == "four towers" {
-				boostlessCalc += " - 0.2 (accounting for four towers timesave)"
-				boostCalc += " - 0.2 (accounting for four towers timesave)"
+				boostlessCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for four towers timesave)", indent, 0.2))
+				boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for four towers timesave)", indent, 0.2))
 			}
 
 			if prevRoom == "sandpit" || prevRoom == "castle wall" {
-				boostlessCalc += " - 0.1 (accounting for ib hh)"
-				boostCalc += " - 0.1 (accounting for ib hh)"
+				boostlessCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for ib hh)", indent, 0.1))
+				boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for ib hh)", indent, 0.1))
 			}
 
 			if prevRoom == "early 3+1" {
 				for _, boost := range boostRooms {
 					if boost.Ind == i-1 && boost.StratInd == 1 {
-						boostCalc += " - 0.5 (accounting for early 3+1 boost timesave)"
+						boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for early 3+1 boost timesave)", indent, 0.5))
 						break
 					}
 				}
@@ -738,7 +757,7 @@ func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) strin
 			if prevRoom == "underbridge" {
 				for _, boost := range boostRooms {
 					if boost.Ind == i-1 && boost.StratInd == 1 {
-						boostCalc += " - 0.2 (accounting for underbridge boost timesave)"
+						boostCalc.WriteString(fmt.Sprintf("%s - %5.2f (accounting for underbridge boost timesave)", indent, 0.2))
 						break
 					}
 				}
@@ -746,19 +765,31 @@ func formatDetailedCalculation(rooms []string, result calc.CalcSeedResult) strin
 		}
 
 		if i < len(rooms)-1 {
-			boostCalc += "\n"
-			boostlessCalc += "\n"
+			boostCalc.WriteString("\n")
+			boostlessCalc.WriteString("\n")
 		}
 	}
 
-	boostCalc += fmt.Sprintf("\n= %.2f = %s", boostTimeSum, FormatTime(boostTimeSum))
-	boostCalc += "\n```\n"
+	// Add separator line for totals
+	separatorLine := strings.Repeat("-", maxRoomNameLength+20)
 
-	boostlessCalc += fmt.Sprintf("\n= %.2f = %s", boostlessTimeSum, FormatTime(boostlessTimeSum))
+	// Add totals with proper formatting
+	boostCalc.WriteString(fmt.Sprintf("\n%s\nTotal: %6.2f seconds = %s\n", separatorLine, boostTimeSum, FormatTime(boostTimeSum)))
+	boostCalc.WriteString("```\n")
 
-	boostlessCalc += "\n```"
+	boostlessCalc.WriteString(fmt.Sprintf("\n%s\nTotal: %6.2f seconds = %s\n", separatorLine, boostlessTimeSum, FormatTime(boostlessTimeSum)))
+	boostlessCalc.WriteString("```")
 
-	return boostCalc + boostlessCalc
+	// Add a comparison of time saved
+	timeSaved := boostlessTimeSum - boostTimeSum
+	var comparisonText string
+	if timeSaved > 0 {
+		comparisonText = fmt.Sprintf("**Time saved with boosts: %.2f seconds**", timeSaved)
+	} else {
+		comparisonText = fmt.Sprintf("**Warning: Boosts are slower by %.2f seconds than boostless!**", -timeSaved)
+	}
+
+	return boostCalc.String() + "\n" + boostlessCalc.String() + "\n\n" + comparisonText
 }
 
 func getFilteredResults(state *ResultState) []calc.CalcSeedResult {
