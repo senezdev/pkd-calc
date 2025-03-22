@@ -65,12 +65,9 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 
 	bestResult := results[0]
 
-	// Generate a unique key for this seed based on the room combination
 	seedKey := strings.Join(rooms, "|")
 
-	// Check if we should send a Discord message (if boost time is good and we haven't seen this seed recently)
 	if bestResult.BoostTime < 130 && !seedCache.HasSeen(seedKey) && !debug {
-		// Mark this seed as seen to prevent duplicate messages
 		seedCache.MarkSeen(seedKey)
 
 		img, err := drawCalcResults(rooms, []calc.CalcSeedResult{bestResult})
@@ -81,8 +78,21 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 		content := fmt.Sprintf("%s has found a %s seed, %s requeues in %s",
 			ign, FormatTime(bestResult.BoostTime), lobby, timeLeft)
 
-		_, err = s.ChannelMessageSendComplex(BotCommandsChannelID, &discordgo.MessageSend{
-			Content: content,
+		components := []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.Button{
+						CustomID: ButtonShowCalc,
+						Label:    "How did you get this?",
+						Style:    discordgo.SuccessButton,
+					},
+				},
+			},
+		}
+
+		message, err := s.ChannelMessageSendComplex(BotCommandsChannelID, &discordgo.MessageSend{
+			Content:    content,
+			Components: components,
 			Files: []*discordgo.File{
 				{
 					Name:   "seed.png",
@@ -93,6 +103,15 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 		if err != nil {
 			return calc.CalcSeedResult{}, nil, fmt.Errorf("error sending message to Discord: %w", err)
 		}
+
+		messageStates[message.ID] = &ResultState{
+			Rooms:   rooms[:len(rooms)-1],
+			Results: []calc.CalcSeedResult{bestResult},
+			Index:   0,
+			Filter:  ButtonAnyBoost,
+		}
+
+		cleanupTimers[message.ID] = cleanupMessageState(message.ID, s, BotCommandsChannelID, true)
 	}
 
 	boostRooms := make([]BoostRoomsResponse, 0)
