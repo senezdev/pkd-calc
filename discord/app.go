@@ -103,10 +103,10 @@ var commands = []*discordgo.ApplicationCommand{
 		Description: "Choose 8 rooms",
 		Options:     generateOptions(),
 	},
-	// {
-	// 	Name:        "playercount",
-	// 	Description: "Find out the current player count in PKD!",
-	// },
+	{
+		Name:        "playercount",
+		Description: "Find out the current player count in PKD!",
+	},
 }
 
 func tournamentHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -266,9 +266,9 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			},
 		})
 	},
-	"tournament": tournamentHandler,
-	"calc":       calcSeedHandler,
-	// "playercount": playercountHandler,
+	"tournament":  tournamentHandler,
+	"calc":        calcSeedHandler,
+	"playercount": playercountHandler,
 }
 
 var options = calc.GetRooms()
