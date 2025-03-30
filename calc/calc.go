@@ -31,13 +31,13 @@ type boostRoom struct {
 	Quality   MoveQuality
 }
 
-type room struct {
+type Room struct {
 	Name          string
 	BoostlessTime float64
 	BoostStrats   []boostRoom
 }
 
-var RoomMap = map[string]room{
+var RoomMap = map[string]Room{
 	"around pillars": {
 		Name:          "Around Pillars",
 		BoostlessTime: 16.9,

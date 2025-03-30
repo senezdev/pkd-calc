@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -21,7 +22,7 @@ import (
 )
 
 func StartDiscordBot() error {
-	slices.Sort(options)
+	slices.Sort(roomOptions)
 
 	log.SetReportCaller(true)
 	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
@@ -106,6 +107,23 @@ var commands = []*discordgo.ApplicationCommand{
 	{
 		Name:        "playercount",
 		Description: "Find out the current player count in PKD!",
+	},
+	{
+		Name:        "allsplits",
+		Description: "Check splits that are used in the calc",
+	},
+	{
+		Name:        "roomsplits",
+		Description: "Display detailed splits for a specific room",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:         discordgo.ApplicationCommandOptionString,
+				Name:         "room",
+				Description:  "The room to display splits for",
+				Required:     true,
+				Autocomplete: true,
+			},
+		},
 	},
 }
 
@@ -269,9 +287,99 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 	"tournament":  tournamentHandler,
 	"calc":        calcSeedHandler,
 	"playercount": playercountHandler,
+	"allsplits":   allSplitsHandler,
+	"roomsplits":  roomSplitsHandler,
 }
 
-var options = calc.GetRooms()
+func roomSplitsHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	logUserInteraction(i, "command", "roomsplits")
+
+	// Get room name from interaction
+	options := i.ApplicationCommandData().Options
+	if len(options) == 0 {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Please specify a room name.",
+			},
+		})
+		return
+	}
+
+	// Get room name from command options
+	roomName := options[0].StringValue()
+
+	// Respond with deferred message while we prepare the data
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{},
+	})
+	if err != nil {
+		log.Errorf("Failed to defer response: %v", err)
+		return
+	}
+
+	// Check if room exists
+	roomInfo, exists := calc.RoomMap[roomName]
+	if !exists {
+		// Try to find a similar room name if exact match not found
+		bestMatch, score := fuzzyMatch(roomName, roomOptions)
+		if score >= 0.6 {
+			roomName = bestMatch
+			roomInfo = calc.RoomMap[bestMatch]
+		} else {
+			content := fmt.Sprintf("Room '%s' not found. Try using the autocomplete feature.", roomName)
+			_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+				Content: &content,
+			})
+			return
+		}
+	}
+
+	// Create embed with detailed room information
+	embed := createRoomDetailEmbed(roomName, roomInfo)
+
+	// Send the response
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{embed},
+	})
+	if err != nil {
+		log.Errorf("Failed to edit response with room details: %v", err)
+	}
+}
+
+func createRoomDetailEmbed(roomName string, room calc.Room) *discordgo.MessageEmbed {
+	var description strings.Builder
+
+	description.WriteString("**Split Times:**\n")
+	description.WriteString("```\n")
+	description.WriteString(fmt.Sprintf("Boostless Time: %8.2f seconds\n", room.BoostlessTime))
+
+	if len(room.BoostStrats) > 0 {
+		description.WriteString("\nBoost Strategies:\n")
+		description.WriteString(fmt.Sprintf("%-20s %12s %12s\n",
+			"Strat", "Total Time", "Boost At"))
+		description.WriteString(strings.Repeat("-", 50) + "\n")
+
+		for _, strat := range room.BoostStrats {
+			description.WriteString(fmt.Sprintf("%-20s %12.2f %12.2f\n",
+				strat.Name, strat.Time, strat.BoostTime))
+		}
+	} else {
+		description.WriteString("\nNo boost strategies available for this room.")
+	}
+	description.WriteString("```\n")
+
+	embed := &discordgo.MessageEmbed{
+		Title:       fmt.Sprintf("Room Details: %s", roomName),
+		Description: description.String(),
+		Color:       0x45D3B3,
+	}
+
+	return embed
+}
+
+var roomOptions = calc.GetRooms()
 
 func generateOptions() []*discordgo.ApplicationCommandOption {
 	var params []*discordgo.ApplicationCommandOption
@@ -847,7 +955,7 @@ func getFilteredResults(state *ResultState) []calc.CalcSeedResult {
 }
 
 func validateInput(input []string) (bool, error) {
-	log.Info(options)
+	log.Info(roomOptions)
 
 	if len(input) != 8 {
 		err := fmt.Errorf("Was expecting 8 rooms, got %d", len(input))
@@ -859,11 +967,11 @@ func validateInput(input []string) (bool, error) {
 	copy(correctedInput, input)
 
 	for i, roomName := range input {
-		if slices.Contains(options, roomName) {
+		if slices.Contains(roomOptions, roomName) {
 			continue
 		}
 
-		bestMatch, score := fuzzyMatch(roomName, options)
+		bestMatch, score := fuzzyMatch(roomName, roomOptions)
 
 		if score >= 0.6 {
 			log.Infof("Autocorrected '%s' to '%s' (score: %.2f)", roomName, bestMatch, score)
@@ -1125,6 +1233,91 @@ func calcSeedHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	cleanupTimers[message.ID] = timer
 }
 
+func allSplitsHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	logUserInteraction(i, "command", "allsplits")
+
+	// First, respond to acknowledge the command
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{},
+	})
+	if err != nil {
+		log.Errorf("Failed to defer response: %v", err)
+		return
+	}
+
+	// Create an embed with a summary table
+	embed := createAllSplitsSummaryEmbed()
+
+	// Create message content introducing the embed
+	content := "Here's a summary of all room splits used in Parkour Duels Bot."
+
+	// Send the response
+	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: &content,
+		Embeds:  &[]*discordgo.MessageEmbed{embed},
+	})
+	if err != nil {
+		log.Errorf("Failed to edit response with splits summary: %v", err)
+	}
+}
+
+func createAllSplitsSummaryEmbed() *discordgo.MessageEmbed {
+	type roomEntry struct {
+		name string
+		info calc.Room
+	}
+
+	allRooms := make([]roomEntry, 0, len(calc.RoomMap))
+	for name, info := range calc.RoomMap {
+		allRooms = append(allRooms, roomEntry{name, info})
+	}
+
+	// Sort rooms by name
+	sort.Slice(allRooms, func(i, j int) bool {
+		return allRooms[i].info.Name < allRooms[j].info.Name
+	})
+
+	var description strings.Builder
+	description.WriteString("```\n")
+	description.WriteString(fmt.Sprintf("%-18s %8s %8s %8s %8s\n",
+		"Room", "Boostless", "Boost #1", "Boost #2", "Boost #3"))
+	description.WriteString(strings.Repeat("-", 50) + "\n")
+
+	for _, entry := range allRooms {
+		room := entry.info
+		roomName := room.Name
+		if len(roomName) > 18 {
+			roomName = roomName[:15] + "..."
+		}
+
+		description.WriteString(fmt.Sprintf("%-18s %8.2f ", roomName, room.BoostlessTime))
+
+		for i := 0; i < 3; i++ {
+			if i < len(room.BoostStrats) {
+				strat := room.BoostStrats[i]
+				// Right-align numbers
+				description.WriteString(fmt.Sprintf("%8.2f", strat.Time))
+			} else {
+				description.WriteString(fmt.Sprintf("%8s", "---"))
+			}
+		}
+		description.WriteString("\n")
+	}
+
+	description.WriteString("```\n")
+	description.WriteString("Times shown are in seconds. Use `/calc` to calculate optimal routes.")
+
+	return &discordgo.MessageEmbed{
+		Title:       "PKD Room Splits Summary",
+		Description: description.String(),
+		Color:       0x45D3B3,
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "Values used in the calculation",
+		},
+	}
+}
+
 func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	log.Debug("Autocomplete handler triggered")
 
@@ -1155,7 +1348,7 @@ func autocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	searchTerm := strings.ToLower(focusedOption.StringValue())
 
 	var choices []*discordgo.ApplicationCommandOptionChoice
-	for _, opt := range options {
+	for _, opt := range roomOptions {
 		if selectedOptions[opt] {
 			continue
 		}
