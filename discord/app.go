@@ -53,7 +53,7 @@ func StartDiscordBot() error {
 	log.Info("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, v := range commands {
-		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, GuildID, v)
+		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, "", v)
 		if err != nil {
 			log.Errorf("Cannot create '%v' command: %v", v.Name, err)
 			return err
