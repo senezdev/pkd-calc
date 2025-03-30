@@ -78,6 +78,8 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 		content := fmt.Sprintf("%s has found a %s seed, %s requeues in %s",
 			ign, FormatTime(bestResult.BoostTime), lobby, timeLeft)
 
+		calcCommand := createCalcCommand(rooms[:len(rooms)-1]) // Exclude "finish room"
+
 		components := []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
@@ -85,6 +87,14 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 						CustomID: ButtonShowCalc,
 						Label:    "How did you get this?",
 						Style:    discordgo.SuccessButton,
+					},
+					discordgo.Button{
+						CustomID: ButtonCopyCalcCommand,
+						Label:    "Copy Calc Command",
+						Style:    discordgo.PrimaryButton,
+						Emoji: &discordgo.ComponentEmoji{
+							Name: "📋",
+						},
 					},
 				},
 			},
@@ -105,10 +115,11 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 		}
 
 		messageStates[message.ID] = &ResultState{
-			Rooms:   rooms[:len(rooms)-1],
-			Results: []calc.CalcSeedResult{bestResult},
-			Index:   0,
-			Filter:  ButtonAnyBoost,
+			Rooms:       rooms[:len(rooms)-1],
+			Results:     []calc.CalcSeedResult{bestResult},
+			Index:       0,
+			Filter:      ButtonAnyBoost,
+			CalcCommand: calcCommand, // Store the calc command in the state
 		}
 
 		cleanupTimers[message.ID] = cleanupMessageState(message.ID, s, BotCommandsChannelID, true)
@@ -203,4 +214,21 @@ func checkBotPermissions(channelID string) error {
 	}
 
 	return nil
+}
+
+func createCalcCommand(rooms []string) string {
+	var commandParts []string
+	commandParts = append(commandParts, "/calc")
+
+	for i, room := range rooms {
+		// Format room names for the command
+		roomName := room
+		// First letter uppercase for each room
+		if len(roomName) > 0 {
+			roomName = strings.ToUpper(roomName[:1]) + roomName[1:]
+		}
+		commandParts = append(commandParts, fmt.Sprintf("room_%d:%s", i+1, roomName))
+	}
+
+	return strings.Join(commandParts, " ")
 }

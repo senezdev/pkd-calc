@@ -288,12 +288,13 @@ func generateOptions() []*discordgo.ApplicationCommandOption {
 }
 
 const (
-	ButtonPrevious   = "previous"
-	ButtonNext       = "next"
-	ButtonTwoBoost   = "two_boost"
-	ButtonThreeBoost = "three_boost"
-	ButtonAnyBoost   = "any_boost"
-	ButtonShowCalc   = "show_calculation"
+	ButtonPrevious        = "previous"
+	ButtonNext            = "next"
+	ButtonTwoBoost        = "two_boost"
+	ButtonThreeBoost      = "three_boost"
+	ButtonAnyBoost        = "any_boost"
+	ButtonShowCalc        = "show_calculation"
+	ButtonCopyCalcCommand = "copy_calc_command"
 )
 
 func createNavigationButtons(currentIndex, totalResults int, currentFilter string) []discordgo.MessageComponent {
@@ -365,10 +366,11 @@ func createNavigationButtons(currentIndex, totalResults int, currentFilter strin
 }
 
 type ResultState struct {
-	Rooms   []string
-	Results []calc.CalcSeedResult
-	Index   int
-	Filter  string
+	Rooms       []string
+	Results     []calc.CalcSeedResult
+	Index       int
+	Filter      string
+	CalcCommand string
 }
 
 var messageStates = make(map[string]*ResultState)
@@ -382,23 +384,19 @@ var (
 	longButtonDuration = 5 * time.Minute
 )
 
-// Modify cleanupMessageState to use a timer
 func cleanupMessageState(messageID string, s *discordgo.Session, channelID string, keepShowCalcButton bool) *time.Timer {
-	return time.AfterFunc(15*time.Second, func() {
-		// Get the current message
+	return time.AfterFunc(5*time.Minute, func() {
 		message, err := s.ChannelMessage(channelID, messageID)
 		if err != nil {
 			log.Errorf("Failed to get message for cleanup: %v", err)
 			return
 		}
 
-		// Get the current image
 		if len(message.Attachments) == 0 {
 			log.Error("No attachments found in message")
 			return
 		}
 
-		// Download the current image
 		resp, err := http.Get(message.Attachments[0].URL)
 		if err != nil {
 			log.Errorf("Failed to get attachment: %v", err)
@@ -506,11 +504,35 @@ func buttonHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	// Reset the cleanup timer
 	if timer, exists := cleanupTimers[i.Message.ID]; exists {
-		timer.Reset(15 * time.Second)
+		timer.Reset(5 * time.Minute)
 	}
 
 	if timer, exists := showCalcTimers[i.Message.ID]; exists {
 		timer.Reset(longButtonDuration)
+	}
+
+	if i.MessageComponentData().CustomID == ButtonCopyCalcCommand {
+		state, exists := messageStates[i.Message.ID]
+		if !exists {
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "This interaction has expired. Please run the command again.",
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			})
+			return
+		}
+
+		// Send the calc command as an ephemeral message that the user can copy
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: fmt.Sprintf("```%s```\nCopy the command above to use with the PKD Bot!", state.CalcCommand),
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
 	}
 
 	if i.MessageComponentData().CustomID == ButtonShowCalc {
