@@ -81,7 +81,7 @@ var RoomMap = map[string]room{
 			{
 				Name:      "cp 0-1",
 				Time:      9.5,
-				BoostTime: 5,
+				BoostTime: 3.0,
 				Quality:   BestMove,
 			},
 		},
@@ -153,7 +153,7 @@ var RoomMap = map[string]room{
 			{
 				Name:      "cp 0-1",
 				Time:      9.5,
-				BoostTime: 4.0,
+				BoostTime: 2.0,
 				Quality:   BestMove,
 			},
 			{
@@ -242,7 +242,7 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2",
-				Time:      13.4,
+				Time:      13.0,
 				BoostTime: 11.0,
 				Quality:   BestMove,
 			},
@@ -268,7 +268,7 @@ var RoomMap = map[string]room{
 	},
 	"overhead 4b": {
 		Name:          "Overhead 4b",
-		BoostlessTime: 23.7,
+		BoostlessTime: 23.2,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -285,15 +285,15 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 2-3",
-				Time:      19.2,
-				BoostTime: 16.0,
+				Time:      19.0,
+				BoostTime: 14.3,
 				Quality:   BrilliantMove,
 			},
 		},
 	},
 	"quartz climb": {
 		Name:          "Quartz Climb",
-		BoostlessTime: 19.2,
+		BoostlessTime: 19.0,
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
@@ -333,7 +333,7 @@ var RoomMap = map[string]room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      7.7,
+				Time:      7.5,
 				BoostTime: 2.0,
 				Quality:   GreatMove,
 			},
@@ -454,7 +454,7 @@ var RoomMap = map[string]room{
 			},
 			{
 				Name:      "cp 1-2",
-				Time:      17.0,
+				Time:      16.5,
 				BoostTime: 14.0,
 				Quality:   BrilliantMove,
 			},
