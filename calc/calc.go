@@ -272,7 +272,7 @@ var RoomMap = map[string]Room{
 		BoostStrats: []boostRoom{
 			{
 				Name:      "cp 0-1",
-				Time:      18.5,
+				Time:      18.0,
 				BoostTime: 2.0,
 				Quality:   BestMove,
 			},
