@@ -137,6 +137,81 @@ func ChattriggersHandle(rooms []string, timeLeft, lobby, ign string, debug bool)
 	return bestResult, boostRooms, nil
 }
 
+type PkdutilResult struct {
+	Best struct {
+		Result     calc.CalcSeedResult
+		BoostRooms []BoostRoomsResponse
+	}
+	Personal struct {
+		Result     calc.CalcSeedResult
+		BoostRooms []BoostRoomsResponse
+	}
+}
+
+func PkdutilsHandle(rooms []string, splits map[string]calc.Room) (PkdutilResult, error) {
+	if s == nil {
+		return PkdutilResult{}, fmt.Errorf("discord session is not initialized")
+	}
+
+	for i := range rooms {
+		rooms[i] = strings.ToLower(rooms[i])
+	}
+	rooms = append(rooms, "finish room")
+
+	// calc with calc splits first
+	results, err := calc.CalcSeed(rooms)
+	if err != nil {
+		return PkdutilResult{}, fmt.Errorf("error calculating seed: %w", err)
+	}
+
+	if len(results) == 0 {
+		return PkdutilResult{}, fmt.Errorf("no results found for the given rooms")
+	}
+
+	bestResult := results[0]
+
+	boostRooms := make([]BoostRoomsResponse, 0)
+	for _, room := range bestResult.BoostRooms {
+		boostRooms = append(boostRooms, BoostRoomsResponse{
+			Name:     fmt.Sprintf("%s (%s)", calc.RoomMap[rooms[room.Ind]].Name, calc.RoomMap[rooms[room.Ind]].BoostStrats[room.StratInd].Name),
+			Pacelock: room.Pacelock,
+			Index:    room.Ind,
+		})
+	}
+
+	// calc with personal splits next
+	personalResults, err := calc.CalcSeedCustom(rooms, splits)
+	if err != nil {
+		return PkdutilResult{}, fmt.Errorf("error calculating seed: %w", err)
+	}
+
+	if len(personalResults) == 0 {
+		return PkdutilResult{}, fmt.Errorf("no results found for the given rooms")
+	}
+
+	personalResult := personalResults[0]
+
+	personalBoostRooms := make([]BoostRoomsResponse, 0)
+	for _, room := range personalResult.BoostRooms {
+		personalBoostRooms = append(personalBoostRooms, BoostRoomsResponse{
+			Name:     fmt.Sprintf("%s (%s)", calc.RoomMap[rooms[room.Ind]].Name, calc.RoomMap[rooms[room.Ind]].BoostStrats[room.StratInd].Name),
+			Pacelock: room.Pacelock,
+			Index:    room.Ind,
+		})
+	}
+
+	return PkdutilResult{
+		Best: struct {
+			Result     calc.CalcSeedResult
+			BoostRooms []BoostRoomsResponse
+		}{bestResult, boostRooms},
+		Personal: struct {
+			Result     calc.CalcSeedResult
+			BoostRooms []BoostRoomsResponse
+		}{personalResult, personalBoostRooms},
+	}, nil
+}
+
 func GetChannelIDByName(channelName string) string {
 	if s == nil {
 		log.Error("Discord session is not initialized")

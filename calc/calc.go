@@ -24,7 +24,7 @@ var (
 	brilliantMoveColor = color.RGBA{48, 162, 197, 200}
 )
 
-type boostRoom struct {
+type BoostRoom struct {
 	Name      string
 	Time      float64
 	BoostTime float64
@@ -34,14 +34,14 @@ type boostRoom struct {
 type Room struct {
 	Name          string
 	BoostlessTime float64
-	BoostStrats   []boostRoom
+	BoostStrats   []BoostRoom
 }
 
 var RoomMap = map[string]Room{
 	"around pillars": {
 		Name:          "Around Pillars",
 		BoostlessTime: 16.9,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      10.5,
@@ -59,7 +59,7 @@ var RoomMap = map[string]Room{
 	"blocks": {
 		Name:          "Blocks",
 		BoostlessTime: 21.3,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      12.0,
@@ -77,7 +77,7 @@ var RoomMap = map[string]Room{
 	"castle wall": {
 		Name:          "Castle Wall",
 		BoostlessTime: 15.7,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      9.5,
@@ -89,7 +89,7 @@ var RoomMap = map[string]Room{
 	"tightrope": {
 		Name:          "Tightrope",
 		BoostlessTime: 27.7,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      19.5,
@@ -113,7 +113,7 @@ var RoomMap = map[string]Room{
 	"early 3+1": {
 		Name:          "Early 3+1",
 		BoostlessTime: 24.8,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      20.5,
@@ -131,7 +131,7 @@ var RoomMap = map[string]Room{
 	"fence squeeze": {
 		Name:          "Fence Squeeze",
 		BoostlessTime: 19.8,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      11.5,
@@ -149,7 +149,7 @@ var RoomMap = map[string]Room{
 	"fences": {
 		Name:          "Fences",
 		BoostlessTime: 13.0,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      9.5,
@@ -167,7 +167,7 @@ var RoomMap = map[string]Room{
 	"fortress": {
 		Name:          "Fortress",
 		BoostlessTime: 14.6,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      10.5,
@@ -185,7 +185,7 @@ var RoomMap = map[string]Room{
 	"four towers": {
 		Name:          "Four Towers",
 		BoostlessTime: 22.3,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      13.3,
@@ -209,7 +209,7 @@ var RoomMap = map[string]Room{
 	"ice": {
 		Name:          "Ice",
 		BoostlessTime: 16.7,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      14.5,
@@ -233,7 +233,7 @@ var RoomMap = map[string]Room{
 	"ladder slide": {
 		Name:          "Ladder Slide",
 		BoostlessTime: 22.3,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      15.5,
@@ -251,7 +251,7 @@ var RoomMap = map[string]Room{
 	"ladder tower": {
 		Name:          "Ladder Tower",
 		BoostlessTime: 24.0,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      12.1,
@@ -269,7 +269,7 @@ var RoomMap = map[string]Room{
 	"overhead 4b": {
 		Name:          "Overhead 4b",
 		BoostlessTime: 23.2,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      18.0,
@@ -294,7 +294,7 @@ var RoomMap = map[string]Room{
 	"quartz climb": {
 		Name:          "Quartz Climb",
 		BoostlessTime: 19.0,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				BoostTime: 1.5,
@@ -312,7 +312,7 @@ var RoomMap = map[string]Room{
 	"quartz temple": {
 		Name:          "Quartz Temple",
 		BoostlessTime: 16.00,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      8.0,
@@ -330,7 +330,7 @@ var RoomMap = map[string]Room{
 	"rng skip": {
 		Name:          "Rng Skip",
 		BoostlessTime: 11.7,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      7.5,
@@ -349,7 +349,7 @@ var RoomMap = map[string]Room{
 		// 13.5 15.5
 		Name:          "Sandpit",
 		BoostlessTime: 33.8,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      23.8,
@@ -373,7 +373,7 @@ var RoomMap = map[string]Room{
 	"scatter": {
 		Name:          "Scatter",
 		BoostlessTime: 18.2,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      13.0,
@@ -391,7 +391,7 @@ var RoomMap = map[string]Room{
 	"slime scatter": {
 		Name:          "Slime Scatter",
 		BoostlessTime: 19.9,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      14.8,
@@ -409,7 +409,7 @@ var RoomMap = map[string]Room{
 	"slime skip": {
 		Name:          "Slime Skip",
 		BoostlessTime: 15.5,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      7.0,
@@ -427,7 +427,7 @@ var RoomMap = map[string]Room{
 	"tower tightrope": {
 		Name:          "Tower Tightrope",
 		BoostlessTime: 22.20,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      10.0,
@@ -445,7 +445,7 @@ var RoomMap = map[string]Room{
 	"triple platform": {
 		Name:          "Triple Platform",
 		BoostlessTime: 18.3,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      9.0,
@@ -463,7 +463,7 @@ var RoomMap = map[string]Room{
 	"triple trapdoors": {
 		Name:          "Triple Trapdoors",
 		BoostlessTime: 17.7,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      12.5,
@@ -482,7 +482,7 @@ var RoomMap = map[string]Room{
 	"underbridge": {
 		Name:          "Underbridge",
 		BoostlessTime: 23.4,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "cp 0-1",
 				Time:      19.5,
@@ -500,7 +500,7 @@ var RoomMap = map[string]Room{
 	"finish room": {
 		Name:          "Finish Room",
 		BoostlessTime: 4.4,
-		BoostStrats: []boostRoom{
+		BoostStrats: []BoostRoom{
 			{
 				Name:      "lol",
 				Time:      2.9,
@@ -526,10 +526,10 @@ func GetRooms() []string {
 	return res
 }
 
-func calcBoostless(roomList []string) float64 {
+func calcBoostless(roomList []string, splits map[string]Room) float64 {
 	time := 0.0
 	for _, room := range roomList {
-		time += RoomMap[room].BoostlessTime
+		time += splits[room].BoostlessTime
 	}
 
 	// timesave := calcTimesave(roomList, nil)
@@ -556,13 +556,13 @@ const (
 	ftTimesave      float64 = 0.2
 )
 
-func calcTimesave(roomList []string, boostStrat []CalcResultBoost) float64 {
+func calcTimesave(roomList []string, boostStrat []CalcResultBoost, splits map[string]Room) float64 {
 	totalTimesave := 0.0
 
 	totalTimesave += roomOneTimesave
 
 	for i := 1; i < len(roomList); i++ {
-		prevRoomName := RoomMap[roomList[i-1]].Name
+		prevRoomName := splits[roomList[i-1]].Name
 		currentTimesave := 0.0
 
 		if strings.ToLower(prevRoomName) == "early 3+1" {
@@ -597,24 +597,24 @@ func calcTimesave(roomList []string, boostStrat []CalcResultBoost) float64 {
 	return totalTimesave
 }
 
-func calcTwoBoost(roomList []string) ([]calcResult, error) {
-	if RoomMap[roomList[len(roomList)-1]].Name != "Finish Room" {
+func calcTwoBoost(roomList []string, splits map[string]Room) ([]calcResult, error) {
+	if strings.ToLower(splits[roomList[len(roomList)-1]].Name) != "finish room" {
 		err := fmt.Errorf("last room is supposed to be finish room. this is a programming error")
 		log.Warn(err)
 		return nil, err
 	}
 
-	boostlessTime := calcBoostless(roomList)
+	boostlessTime := calcBoostless(roomList, splits)
 	results := make([]calcResult, 0, 81)
 
 	for i := 0; i < 9; i++ {
 		for j := i + 1; j < 9; j++ {
-			firstBoostRoom := RoomMap[roomList[i]]
-			secondBoostRoom := RoomMap[roomList[j]]
+			firstBoostRoom := splits[roomList[i]]
+			secondBoostRoom := splits[roomList[j]]
 
 			timeBetweenBoosts := 0.0
 			for k := i + 1; k < j; k++ {
-				timeBetweenBoosts += RoomMap[roomList[k]].BoostlessTime
+				timeBetweenBoosts += splits[roomList[k]].BoostlessTime
 			}
 
 			for firstBoostStrat := 0; firstBoostStrat < len(firstBoostRoom.BoostStrats); firstBoostStrat++ {
@@ -634,7 +634,7 @@ func calcTwoBoost(roomList []string) ([]calcResult, error) {
 							Pacelock: pacelock,
 						},
 					}
-					timesave := calcTimesave(roomList, boostStrat)
+					timesave := calcTimesave(roomList, boostStrat, splits)
 
 					results = append(results, calcResult{
 						time:       boostTime - timesave,
@@ -656,22 +656,22 @@ func calcTwoBoost(roomList []string) ([]calcResult, error) {
 	return results, nil
 }
 
-func calcThreeBoost(roomList []string) ([]calcResult, error) {
-	if RoomMap[roomList[len(roomList)-1]].Name != "Finish Room" {
+func calcThreeBoost(roomList []string, splits map[string]Room) ([]calcResult, error) {
+	if strings.ToLower(splits[roomList[len(roomList)-1]].Name) != "finish room" {
 		err := fmt.Errorf("last room is supposed to be finish room. this is a programming error")
 		log.Warn(err)
 		return nil, err
 	}
 
-	boostlessTime := calcBoostless(roomList)
+	boostlessTime := calcBoostless(roomList, splits)
 	results := make([]calcResult, 0, 729)
 
 	for i := 0; i < 9; i++ {
 		for j := i + 1; j < 9; j++ {
 			for k := j + 1; k < 9; k++ {
-				firstBoostRoom := RoomMap[roomList[i]]
-				secondBoostRoom := RoomMap[roomList[j]]
-				thirdBoostRoom := RoomMap[roomList[k]]
+				firstBoostRoom := splits[roomList[i]]
+				secondBoostRoom := splits[roomList[j]]
+				thirdBoostRoom := splits[roomList[k]]
 
 				timeBetweenBoosts12 := 0.0
 				for m := i + 1; m < j; m++ {
@@ -707,7 +707,7 @@ func calcThreeBoost(roomList []string) ([]calcResult, error) {
 								},
 							}
 
-							timesave := calcTimesave(roomList, boostStrat)
+							timesave := calcTimesave(roomList, boostStrat, splits)
 
 							results = append(results, calcResult{
 								time:       boostTime - timesave,
@@ -758,13 +758,13 @@ func mergeSortedResults(a, b []calcResult) []calcResult {
 	return merged
 }
 
-func calcSeedInternal(roomList []string) ([]CalcSeedResult, error) {
-	boostlessTime := calcBoostless(roomList)
-	boostlessTime -= calcTimesave(roomList, nil)
+func calcSeedInternal(roomList []string, splits map[string]Room) ([]CalcSeedResult, error) {
+	boostlessTime := calcBoostless(roomList, splits)
+	boostlessTime -= calcTimesave(roomList, nil, splits)
 
 	res := make([]CalcSeedResult, 0, 5)
 
-	twoBoost, err := calcTwoBoost(roomList)
+	twoBoost, err := calcTwoBoost(roomList, splits)
 	if err != nil {
 		log.Warn(err)
 		return nil, err
@@ -776,7 +776,7 @@ func calcSeedInternal(roomList []string) ([]CalcSeedResult, error) {
 		return nil, err
 	}
 
-	threeBoost, err := calcThreeBoost(roomList)
+	threeBoost, err := calcThreeBoost(roomList, splits)
 	if err != nil {
 		log.Warn(err)
 		return nil, err
@@ -803,5 +803,12 @@ func CalcSeed(roomList []string) ([]CalcSeedResult, error) {
 	if roomList[len(roomList)-1] != "finish room" {
 		roomList = append(roomList, "finish room")
 	}
-	return calcSeedInternal(roomList)
+	return calcSeedInternal(roomList, RoomMap)
+}
+
+func CalcSeedCustom(roomList []string, splits map[string]Room) ([]CalcSeedResult, error) {
+	if roomList[len(roomList)-1] != "finish room" {
+		roomList = append(roomList, "finish room")
+	}
+	return calcSeedInternal(roomList, splits)
 }
