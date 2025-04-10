@@ -118,11 +118,6 @@ func pkdutilsHandler(w http.ResponseWriter, r *http.Request) {
 
 	splits := make(map[string]calc.Room)
 	for key, room := range req.Splits {
-		splits[key] = calc.Room{
-			Name:          key,
-			BoostlessTime: room.BoostlessTime,
-		}
-
 		boostStrats := make([]calc.BoostRoom, len(room.BoostStrats))
 		for i, strat := range room.BoostStrats {
 			boostStrats[i] = calc.BoostRoom{

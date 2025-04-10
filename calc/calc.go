@@ -598,7 +598,7 @@ func calcTimesave(roomList []string, boostStrat []CalcResultBoost, splits map[st
 }
 
 func calcTwoBoost(roomList []string, splits map[string]Room) ([]calcResult, error) {
-	if strings.ToLower(splits[roomList[len(roomList)-1]].Name) != "finish room" {
+	if strings.ToLower(roomList[len(roomList)-1]) != "finish room" {
 		err := fmt.Errorf("last room is supposed to be finish room. this is a programming error")
 		log.Warn(err)
 		return nil, err
@@ -657,7 +657,7 @@ func calcTwoBoost(roomList []string, splits map[string]Room) ([]calcResult, erro
 }
 
 func calcThreeBoost(roomList []string, splits map[string]Room) ([]calcResult, error) {
-	if strings.ToLower(splits[roomList[len(roomList)-1]].Name) != "finish room" {
+	if strings.ToLower(roomList[len(roomList)-1]) != "finish room" {
 		err := fmt.Errorf("last room is supposed to be finish room. this is a programming error")
 		log.Warn(err)
 		return nil, err

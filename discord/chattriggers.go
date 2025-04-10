@@ -156,7 +156,6 @@ func PkdutilsHandle(rooms []string, splits map[string]calc.Room) (PkdutilResult,
 	for i := range rooms {
 		rooms[i] = strings.ToLower(rooms[i])
 	}
-	rooms = append(rooms, "finish room")
 
 	// calc with calc splits first
 	results, err := calc.CalcSeed(rooms)
