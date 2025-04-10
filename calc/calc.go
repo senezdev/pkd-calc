@@ -675,11 +675,11 @@ func calcThreeBoost(roomList []string, splits map[string]Room) ([]calcResult, er
 
 				timeBetweenBoosts12 := 0.0
 				for m := i + 1; m < j; m++ {
-					timeBetweenBoosts12 += RoomMap[roomList[m]].BoostlessTime
+					timeBetweenBoosts12 += splits[roomList[m]].BoostlessTime
 				}
 				timeBetweenBoosts23 := 0.0
 				for m := j + 1; m < k; m++ {
-					timeBetweenBoosts23 += RoomMap[roomList[m]].BoostlessTime
+					timeBetweenBoosts23 += splits[roomList[m]].BoostlessTime
 				}
 
 				for firstBoostStrat := 0; firstBoostStrat < len(firstBoostRoom.BoostStrats); firstBoostStrat++ {
