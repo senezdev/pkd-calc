@@ -810,5 +810,10 @@ func CalcSeedCustom(roomList []string, splits map[string]Room) ([]CalcSeedResult
 	if roomList[len(roomList)-1] != "finish room" {
 		roomList = append(roomList, "finish room")
 	}
+
+	for _, r := range roomList {
+		log.Debugf("%+v", splits[r])
+	}
+
 	return calcSeedInternal(roomList, splits)
 }

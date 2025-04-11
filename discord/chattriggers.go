@@ -156,6 +156,7 @@ func PkdutilsHandle(rooms []string, splits map[string]calc.Room) (PkdutilResult,
 	for i := range rooms {
 		rooms[i] = strings.ToLower(rooms[i])
 	}
+	rooms = append(rooms, "finish room")
 
 	// calc with calc splits first
 	results, err := calc.CalcSeed(rooms)
@@ -183,6 +184,7 @@ func PkdutilsHandle(rooms []string, splits map[string]calc.Room) (PkdutilResult,
 	if err != nil {
 		return PkdutilResult{}, fmt.Errorf("error calculating seed: %w", err)
 	}
+	log.Debugf("%+v", personalResults[0])
 
 	if len(personalResults) == 0 {
 		return PkdutilResult{}, fmt.Errorf("no results found for the given rooms")
